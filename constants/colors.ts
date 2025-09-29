@@ -15,5 +15,6 @@ export default {
     error: "#F87171",
     warning: "#FBBF24",
     inputBg: "#0B0B0B",
+    destructive: "#EF4444",
   },
 };

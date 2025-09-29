@@ -10,8 +10,10 @@ import {
   Platform,
   useWindowDimensions,
   Alert,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import {
   MessageSquare,
@@ -23,13 +25,23 @@ import {
   User,
   Wand2,
   FileText,
+  Camera,
+  ImageIcon,
+  X,
 } from 'lucide-react-native';
 import { ContractFormData } from '@/types/contract';
+
+interface MessageImage {
+  uri: string;
+  base64?: string;
+  mimeType: string;
+}
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  images?: MessageImage[];
   timestamp: Date;
 }
 
@@ -59,6 +71,8 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [sourceText, setSourceText] = useState<string>(contractData?.source || '');
   const [showSourceEditor, setShowSourceEditor] = useState<boolean>(false);
+  const [selectedImages, setSelectedImages] = useState<MessageImage[]>([]);
+  const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
   
   const slideAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
@@ -108,35 +122,199 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
     setShowSourceEditor(false);
   }, [contractData, sourceText]);
 
+  const callGeminiAPI = useCallback(async (messages: Message[]): Promise<string> => {
+    try {
+      const apiKey = 'AIzaSyCC5LnBazvUeGJrg-QDQMB7bp64FV5DMVk';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+      
+      // Convert messages to Gemini format
+      const geminiMessages = messages.map(msg => {
+        const parts: any[] = [];
+        
+        if (msg.content) {
+          parts.push({ text: msg.content });
+        }
+        
+        if (msg.images && msg.images.length > 0) {
+          msg.images.forEach(img => {
+            if (img.base64) {
+              parts.push({
+                inline_data: {
+                  mime_type: img.mimeType,
+                  data: img.base64
+                }
+              });
+            }
+          });
+        }
+        
+        return {
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts
+        };
+      });
+      
+      const requestBody = {
+        contents: geminiMessages,
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          }
+        ]
+      };
+      
+      console.log('Sending request to Gemini API:', JSON.stringify(requestBody, null, 2));
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Gemini API error:', response.status, errorText);
+        throw new Error(`API request failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Gemini API response:', JSON.stringify(data, null, 2));
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('Invalid response format from Gemini API');
+      }
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      throw error;
+    }
+  }, []);
+
   const sendMessage = useCallback(async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() && selectedImages.length === 0) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: inputText.trim(),
+      images: selectedImages.length > 0 ? selectedImages : undefined,
       timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
+    setSelectedImages([]);
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Get conversation history for context
+      const conversationHistory = [...messages, userMessage];
+      
+      // Add system context if this is a contract page
+      if (contractData) {
+        const systemMessage: Message = {
+          id: 'system',
+          role: 'user',
+          content: `You are an AI assistant helping with contract forms and document parsing. The user has access to a "Fill with AI" feature and can edit source documents. Current source document: ${sourceText || 'No source document provided'}. Please provide helpful, accurate assistance with contract-related tasks.`,
+          timestamp: new Date(),
+        };
+        conversationHistory.unshift(systemMessage);
+      }
+      
+      const aiResponseText = await callGeminiAPI(conversationHistory);
+      
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: contractData 
-          ? `I understand you're asking about "${userMessage.content}". I can help you with contract forms, document parsing, and general assistance. You can use the "Fill with AI" button to automatically populate the form, or edit the source document directly. Is there something specific you'd like me to help you with?`
-          : `I understand you're asking about "${userMessage.content}". I can help you with general questions and guidance. Is there something specific you'd like me to help you with?`,
+        content: aiResponseText,
         timestamp: new Date(),
       };
       
       setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'I apologize, but I\'m having trouble connecting to my AI service right now. Please try again in a moment.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
-  }, [inputText, contractData]);
+    }
+  }, [inputText, selectedImages, messages, contractData, sourceText, callGeminiAPI]);
+
+  const pickImage = useCallback(async (useCamera: boolean = false) => {
+    try {
+      setIsLoadingImage(true);
+      
+      let result;
+      if (useCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Camera permission is required to take photos.');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+          base64: true,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+          base64: true,
+        });
+      }
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const imageData: MessageImage = {
+          uri: asset.uri,
+          base64: asset.base64 || undefined,
+          mimeType: asset.mimeType || 'image/jpeg',
+        };
+        setSelectedImages(prev => [...prev, imageData]);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    } finally {
+      setIsLoadingImage(false);
+    }
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   const drawerHeight = slideAnim.interpolate({
     inputRange: [0, 1],
@@ -248,14 +426,28 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
                     message.role === 'user' ? styles.userMessage : styles.assistantMessage,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.messageText,
-                      message.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
-                    ]}
-                  >
-                    {message.content}
-                  </Text>
+                  {message.images && message.images.length > 0 && (
+                    <View style={styles.messageImages}>
+                      {message.images.map((img, index) => (
+                        <Image
+                          key={index}
+                          source={{ uri: img.uri }}
+                          style={styles.messageImage}
+                          resizeMode="cover"
+                        />
+                      ))}
+                    </View>
+                  )}
+                  {message.content && (
+                    <Text
+                      style={[
+                        styles.messageText,
+                        message.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                      ]}
+                    >
+                      {message.content}
+                    </Text>
+                  )}
                 </View>
               </View>
             ))}
@@ -278,22 +470,67 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
 
           {/* Input */}
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Ask me anything..."
-              placeholderTextColor={Colors.light.subtle}
-              multiline
-              maxLength={500}
-            />
-            <TouchableOpacity
-              onPress={sendMessage}
-              style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-              disabled={!inputText.trim()}
-            >
-              <Send color={inputText.trim() ? Colors.light.tint : Colors.light.subtle} size={18} />
-            </TouchableOpacity>
+            {/* Selected Images Preview */}
+            {selectedImages.length > 0 && (
+              <View style={styles.selectedImagesContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {selectedImages.map((img, index) => (
+                    <View key={index} style={styles.selectedImageWrapper}>
+                      <Image source={{ uri: img.uri }} style={styles.selectedImage} />
+                      <TouchableOpacity
+                        onPress={() => removeImage(index)}
+                        style={styles.removeImageButton}
+                      >
+                        <X color="#FFFFFF" size={12} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            
+            <View style={styles.inputRow}>
+              <View style={styles.inputActions}>
+                <TouchableOpacity
+                  onPress={() => pickImage(true)}
+                  style={styles.inputActionButton}
+                  disabled={isLoadingImage}
+                >
+                  <Camera color={Colors.light.subtle} size={18} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => pickImage(false)}
+                  style={styles.inputActionButton}
+                  disabled={isLoadingImage}
+                >
+                  <ImageIcon color={Colors.light.subtle} size={18} />
+                </TouchableOpacity>
+              </View>
+              
+              <TextInput
+                style={styles.textInput}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder="Ask me anything..."
+                placeholderTextColor={Colors.light.subtle}
+                multiline
+                maxLength={500}
+              />
+              
+              <TouchableOpacity
+                onPress={sendMessage}
+                style={[
+                  styles.sendButton,
+                  (!inputText.trim() && selectedImages.length === 0) && styles.sendButtonDisabled
+                ]}
+                disabled={!inputText.trim() && selectedImages.length === 0}
+              >
+                <Send 
+                  color={(inputText.trim() || selectedImages.length > 0) ? Colors.light.tint : Colors.light.subtle} 
+                  size={18} 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Animated.View>
@@ -446,12 +683,51 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: Colors.light.border,
-    gap: 12,
+  },
+  selectedImagesContainer: {
+    marginBottom: 12,
+  },
+  selectedImageWrapper: {
+    position: 'relative',
+    marginRight: 8,
+  },
+  selectedImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.light.destructive,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  inputActions: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  inputActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   textInput: {
     flex: 1,
@@ -464,6 +740,17 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     borderWidth: 1,
     borderColor: Colors.light.border,
+  },
+  messageImages: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginBottom: 8,
+  },
+  messageImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
   },
   sendButton: {
     width: 40,
