@@ -31,6 +31,8 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
+  
+  console.log('FloatingAINavbar - Current pathname:', pathname);
 
   const [chatMessages] = useState<ChatMessage[]>([
     {
@@ -84,19 +86,7 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
     }
   };
 
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
 
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-  };
 
   if (!visible) return null;
 
@@ -351,7 +341,13 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
             <View style={styles.navbarContent}>
               <TouchableOpacity
                 style={styles.navbarButton}
-                onPress={() => router.push('/dashboard')}
+onPress={() => {
+                  try {
+                    router.replace('/dashboard');
+                  } catch (error) {
+                    console.error('Navigation error to dashboard:', error);
+                  }
+                }}
                 testID="homeTab"
               >
                 <Home size={24} color={pathname === '/dashboard' ? Colors.light.tint : Colors.light.subtle} />
@@ -359,7 +355,13 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
 
               <TouchableOpacity
                 style={styles.navbarButton}
-                onPress={() => router.push('/contract')}
+onPress={() => {
+                  try {
+                    router.replace('/contract');
+                  } catch (error) {
+                    console.error('Navigation error to contract:', error);
+                  }
+                }}
                 testID="contractTab"
               >
                 <FileCog size={24} color={pathname === '/contract' ? Colors.light.tint : Colors.light.subtle} />
@@ -387,7 +389,13 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
 
               <TouchableOpacity
                 style={styles.navbarButton}
-                onPress={() => router.push('/')}
+onPress={() => {
+                  try {
+                    router.replace('/');
+                  } catch (error) {
+                    console.error('Navigation error to assistant:', error);
+                  }
+                }}
                 testID="assistantTab"
               >
                 <MessageSquare size={24} color={pathname === '/' ? Colors.light.tint : Colors.light.subtle} />
@@ -407,7 +415,13 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
             <View style={styles.navbarContent}>
               <TouchableOpacity
                 style={styles.navbarButton}
-                onPress={() => router.push('/dashboard')}
+onPress={() => {
+                  try {
+                    router.replace('/dashboard');
+                  } catch (error) {
+                    console.error('Navigation error to dashboard:', error);
+                  }
+                }}
                 testID="homeTab"
               >
                 <Home size={24} color={pathname === '/dashboard' ? Colors.light.tint : Colors.light.subtle} />
@@ -415,7 +429,13 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
 
               <TouchableOpacity
                 style={styles.navbarButton}
-                onPress={() => router.push('/contract')}
+onPress={() => {
+                  try {
+                    router.replace('/contract');
+                  } catch (error) {
+                    console.error('Navigation error to contract:', error);
+                  }
+                }}
                 testID="contractTab"
               >
                 <FileCog size={24} color={pathname === '/contract' ? Colors.light.tint : Colors.light.subtle} />
@@ -443,7 +463,13 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
 
               <TouchableOpacity
                 style={styles.navbarButton}
-                onPress={() => router.push('/')}
+onPress={() => {
+                  try {
+                    router.replace('/');
+                  } catch (error) {
+                    console.error('Navigation error to assistant:', error);
+                  }
+                }}
                 testID="assistantTab"
               >
                 <MessageSquare size={24} color={pathname === '/' ? Colors.light.tint : Colors.light.subtle} />

@@ -9,7 +9,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors.light.tabIconSelected,
         tabBarInactiveTintColor: Colors.light.tabIconDefault,
-        tabBarStyle: { display: 'none' }, // Hide the default tab bar
+        tabBarStyle: { display: 'none' },
         headerStyle: { backgroundColor: Colors.light.background },
         headerTitleStyle: { color: Colors.light.text },
         headerTintColor: Colors.light.tabIconSelected,

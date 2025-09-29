@@ -12,6 +12,8 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  console.log('RootLayoutNav rendering');
+  
   return (
     <View style={styles.container}>
       <Stack screenOptions={{ headerBackTitle: "Back" }}>
