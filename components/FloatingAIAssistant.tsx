@@ -342,7 +342,6 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
           {/* Header */}
           <View style={styles.drawerHeader}>
             <View style={styles.headerLeft}>
-              <Bot color={Colors.light.tint} size={20} />
               <Text style={styles.headerTitle}>AI Assistant</Text>
             </View>
             <TouchableOpacity onPress={toggleExpanded} style={styles.headerButton}>
@@ -417,7 +416,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
                   {message.role === 'user' ? (
                     <User color={Colors.light.subtle} size={16} />
                   ) : (
-                    <Bot color={Colors.light.tint} size={16} />
+                    <View />
                   )}
                 </View>
                 <View
@@ -455,7 +454,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
             {isTyping && (
               <View style={[styles.messageRow, styles.assistantMessageRow]}>
                 <View style={styles.messageIcon}>
-                  <Bot color={Colors.light.tint} size={16} />
+                  <View />
                 </View>
                 <View style={[styles.messageBubble, styles.assistantMessage]}>
                   <View style={styles.typingIndicator}>
