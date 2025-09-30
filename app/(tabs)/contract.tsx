@@ -7,7 +7,7 @@ import Card from "@/components/Card";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import InputField from "@/components/InputField";
 import TagToggle from "@/components/TagToggle";
-import FloatingAIAssistant from "@/components/FloatingAIAssistant";
+import FloatingAINavbar from "@/components/FloatingAINavbar";
 import { BadgeCheck, FileText, RotateCcw, IdCard, Briefcase } from "lucide-react-native";
 import { ContractFormData } from "@/types/contract";
 import { applyParsedToState, initialContractData, parseContractSource } from "@/utils/contractParser";
@@ -84,32 +84,6 @@ export default function ContractScreen() {
           testID="contractScroll"
         >
           <View style={styles.grid}>
-            <Card style={styles.panel}>
-              <View style={styles.panelHeader}>
-                <View style={styles.headerLeft}>
-                  <FileText color="#A7F3D0" />
-                  <Text style={styles.headerTitle}>Source request</Text>
-                </View>
-                <Text style={styles.caption}>Paste or edit, then fill</Text>
-              </View>
-              <TextInput
-                testID="sourceInput"
-                value={source}
-                onChangeText={setSource}
-                multiline
-                numberOfLines={14}
-                style={styles.source}
-                placeholder="Paste the request here"
-                placeholderTextColor="#6B7280"
-              />
-              <View style={styles.actionsRow}>
-                <TouchableOpacity onPress={onReset} style={styles.btn} testID="resetAI">
-                  <RotateCcw color="#D1D5DB" size={16} />
-                  <Text style={styles.btnText}>Reset</Text>
-                </TouchableOpacity>
-              </View>
-            </Card>
-
             <Card style={styles.panel}>
               <View style={styles.panelHeader}>
                 <View style={styles.headerLeft}>
@@ -489,6 +463,10 @@ export default function ContractScreen() {
               </View>
 
               <View style={styles.formActions}>
+                <TouchableOpacity style={styles.btn} onPress={onReset} testID="resetAI">
+                  <RotateCcw color="#D1D5DB" size={16} />
+                  <Text style={styles.btnText}>Reset</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.btn} onPress={() => {}} testID="saveDraft">
                   <Text style={styles.btnText}>Save draft</Text>
                 </TouchableOpacity>
@@ -500,14 +478,13 @@ export default function ContractScreen() {
           </View>
         </ScrollView>
         
-        <FloatingAIAssistant 
+        <FloatingAINavbar 
           contractData={{
             source,
             formData: data,
             onFillAI,
             onUpdateSource,
           }}
-          testID="contractAIAssistant"
         />
       </>
     </ErrorBoundary>

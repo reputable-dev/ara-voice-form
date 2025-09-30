@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,91 +7,301 @@ import {
   StyleSheet,
   TextInput,
   Platform,
+  ScrollView,
+  useWindowDimensions,
+  Alert,
+  Image,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
-import { Send, X, MessageSquare, Home, FileCog, BarChart3, MapPin, Clock, TrendingUp, MoreHorizontal, Bell, Settings } from 'lucide-react-native';
+import { Send, X, MessageSquare, Home, FileCog, MoreHorizontal, Sparkles, Wand2, FileText, Camera, ImageIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
+import { ContractFormData } from '@/types/contract';
 
-interface ChatMessage {
+interface MessageImage {
+  uri: string;
+  base64?: string;
+  mimeType: string;
+}
+
+interface Message {
   id: string;
-  icon: React.ComponentType<any>;
-  question: string;
-  answer: string;
+  role: 'user' | 'assistant';
+  content: string;
+  images?: MessageImage[];
+  timestamp: Date;
 }
 
 interface FloatingAINavbarProps {
   visible?: boolean;
+  contractData?: {
+    source: string;
+    formData: ContractFormData;
+    onFillAI: () => void;
+    onUpdateSource: (source: string) => void;
+  };
 }
 
-export default function FloatingAINavbar({ visible = true }: FloatingAINavbarProps) {
+export default function FloatingAINavbar({ visible = true, contractData }: FloatingAINavbarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      content: contractData 
+        ? 'Hi! I\'m your AI assistant. I can help you fill out contract forms, parse source documents, and answer questions. How can I assist you today?'
+        : 'Hi! I\'m your AI assistant. How can I help you today?',
+      timestamp: new Date(),
+    },
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [sourceText, setSourceText] = useState(contractData?.source || '');
+  const [showSourceEditor, setShowSourceEditor] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<MessageImage[]>([]);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
+  
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
+  const { height: screenHeight } = useWindowDimensions();
   
   console.log('FloatingAINavbar - Current pathname:', pathname);
-
-  const [chatMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      icon: BarChart3,
-      question: 'What was the last inspection rating?',
-      answer: 'The last inspection rating was 92/100, conducted on March 15, 2023.'
-    },
-    {
-      id: '2',
-      icon: MapPin,
-      question: 'When was the Willetton location last inspected?',
-      answer: 'The Willetton location was last inspected on February 8, 2023 with a rating of 88/100.'
-    },
-    {
-      id: '3',
-      icon: Clock,
-      question: 'How many inspections were conducted last month?',
-      answer: 'There were 14 inspections conducted last month across all locations.'
-    },
-    {
-      id: '4',
-      icon: TrendingUp,
-      question: "What's the trend in inspection ratings?",
-      answer: 'Inspection ratings have improved by 7% on average over the last quarter.'
-    }
-  ]);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const toggleExpanded = () => {
+  const toggleExpanded = useCallback(() => {
     const toValue = isExpanded ? 0 : 1;
-    setIsExpanded(!isExpanded);
     
     Animated.spring(slideAnim, {
       toValue,
-      useNativeDriver: true,
+      useNativeDriver: false,
       tension: 100,
       friction: 8,
     }).start();
-  };
+    
+    setIsExpanded(!isExpanded);
+  }, [isExpanded, slideAnim]);
 
-  const handleSendMessage = () => {
-    if (inputText.trim()) {
-      console.log('Sending message:', inputText);
-      setInputText('');
-      if (Platform.OS !== 'web') {
-        // Haptics would go here
-      }
+  const handleFillWithAI = useCallback(() => {
+    if (!contractData) return;
+    
+    try {
+      contractData.onFillAI();
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: 'I\'ve successfully filled the contract form with data from the source document. Please review the filled fields and make any necessary adjustments.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fill form with AI. Please check the source document format.');
     }
-  };
+  }, [contractData]);
 
+  const handleUpdateSource = useCallback(() => {
+    if (!contractData) return;
+    
+    contractData.onUpdateSource(sourceText);
+    const aiMessage: Message = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: 'Source document updated successfully. You can now use "Fill with AI" to parse the updated content.',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, aiMessage]);
+    setShowSourceEditor(false);
+  }, [contractData, sourceText]);
 
+  const callGeminiAPI = useCallback(async (messages: Message[]): Promise<string> => {
+    try {
+      const apiKey = 'AIzaSyCC5LnBazvUeGJrg-QDQMB7bp64FV5DMVk';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+      
+      const geminiMessages = messages.map(msg => {
+        const parts: any[] = [];
+        
+        if (msg.content) {
+          parts.push({ text: msg.content });
+        }
+        
+        if (msg.images && msg.images.length > 0) {
+          msg.images.forEach(img => {
+            if (img.base64) {
+              parts.push({
+                inline_data: {
+                  mime_type: img.mimeType,
+                  data: img.base64
+                }
+              });
+            }
+          });
+        }
+        
+        return {
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts
+        };
+      });
+      
+      const requestBody = {
+        contents: geminiMessages,
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        console.error('Gemini API error:', response.status, responseText);
+        throw new Error(`API request failed: ${response.status}`);
+      }
+      
+      const data = JSON.parse(responseText);
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('Invalid response format from Gemini API');
+      }
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      throw error;
+    }
+  }, []);
+
+  const sendMessage = useCallback(async () => {
+    if (!inputText.trim() && selectedImages.length === 0) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: inputText.trim(),
+      images: selectedImages.length > 0 ? selectedImages : undefined,
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setSelectedImages([]);
+    setIsTyping(true);
+
+    try {
+      const conversationHistory = [...messages, userMessage];
+      
+      if (contractData) {
+        const systemMessage: Message = {
+          id: 'system',
+          role: 'user',
+          content: `You are an AI assistant helping with contract forms and document parsing. Current source document: ${sourceText || 'No source document provided'}. Please provide helpful, accurate assistance with contract-related tasks.`,
+          timestamp: new Date(),
+        };
+        conversationHistory.unshift(systemMessage);
+      }
+      
+      const aiResponseText = await callGeminiAPI(conversationHistory);
+      
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: aiResponseText,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'I apologize, but I\'m having trouble connecting to my AI service right now. Please try again in a moment.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  }, [inputText, selectedImages, messages, contractData, sourceText, callGeminiAPI]);
+
+  const pickImage = useCallback(async (useCamera: boolean = false) => {
+    try {
+      setIsLoadingImage(true);
+      
+      let result;
+      if (useCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Camera permission is required to take photos.');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+          base64: true,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+          base64: true,
+        });
+      }
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const imageData: MessageImage = {
+          uri: asset.uri,
+          base64: asset.base64 || undefined,
+          mimeType: asset.mimeType || 'image/jpeg',
+        };
+        setSelectedImages(prev => [...prev, imageData]);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    } finally {
+      setIsLoadingImage(false);
+    }
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const drawerHeight = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, screenHeight * 0.7],
+  });
+
+  const navbarOpacity = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.9],
+  });
 
   if (!visible) return null;
 
   return (
-    <>
+    <View style={[styles.mainContainer, { bottom: insets.bottom }]}>
       {/* Backdrop */}
       {isExpanded && (
         <Animated.View
@@ -110,21 +320,13 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
         </Animated.View>
       )}
 
-      {/* Expanded Chat Interface */}
+      {/* Expanded Drawer */}
       <Animated.View
         style={[
           styles.expandedContainer,
           {
-            bottom: insets.bottom + 80,
-            transform: [
-              {
-                translateY: slideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [500, 0],
-                }),
-              },
-            ],
-            opacity: slideAnim,
+            height: drawerHeight,
+            marginBottom: isExpanded ? 0 : -screenHeight * 0.7,
           },
         ]}
         pointerEvents={isExpanded ? 'auto' : 'none'}
@@ -134,93 +336,180 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
             <View style={styles.expandedContent}>
               <View style={styles.expandedHeader}>
                 <View style={styles.headerLeft}>
-                  <View style={styles.aiIconLarge}>
-                    <View style={styles.aiIconGrid}>
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    </View>
-                  </View>
                   <View>
                     <Text style={styles.headerTitle}>AI Assistant</Text>
-                    <Text style={styles.headerSubtitle}>Tap to speak</Text>
+                    <Text style={styles.headerSubtitle}>Ask me anything</Text>
                   </View>
                 </View>
-                <View style={styles.headerRight}>
-                  <TouchableOpacity style={styles.headerButton}>
-                    <Bell size={18} color={Colors.light.subtle} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.headerButton}>
-                    <Settings size={18} color={Colors.light.subtle} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={toggleExpanded} style={styles.closeButton}>
-                    <X size={18} color={Colors.light.subtle} />
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity onPress={toggleExpanded} style={styles.closeButton}>
+                  <X size={18} color={Colors.light.subtle} />
+                </TouchableOpacity>
               </View>
 
-              <View style={styles.chatArea}>
-                <View style={styles.welcomeMessage}>
-                  <Text style={styles.welcomeText}>
-                    How can I help you today?
-                  </Text>
+              {contractData && (
+                <View style={styles.aiActions}>
+                  <TouchableOpacity 
+                    onPress={handleFillWithAI} 
+                    style={styles.aiActionButton}
+                    testID="aiFillButton"
+                  >
+                    <Wand2 color={Colors.light.tint} size={16} />
+                    <Text style={styles.aiActionText}>Fill with AI</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => setShowSourceEditor(!showSourceEditor)} 
+                    style={styles.aiActionButton}
+                    testID="editSourceButton"
+                  >
+                    <FileText color={Colors.light.tint} size={16} />
+                    <Text style={styles.aiActionText}>Edit Source</Text>
+                  </TouchableOpacity>
                 </View>
-                
-                <View style={styles.chatHistory}>
-                  {chatMessages.map((message) => {
-                    const IconComponent = message.icon;
-                    return (
-                      <View key={message.id} style={styles.chatMessage}>
-                        <View style={styles.messageHeader}>
-                          <View style={styles.messageIcon}>
-                            <IconComponent size={16} color={Colors.light.subtle} />
-                          </View>
-                          <Text style={styles.messageQuestion}>{message.question}</Text>
+              )}
+
+              {showSourceEditor && contractData && (
+                <View style={styles.sourceEditor}>
+                  <Text style={styles.sourceEditorLabel}>Source Document</Text>
+                  <TextInput
+                    style={styles.sourceInput}
+                    value={sourceText}
+                    onChangeText={setSourceText}
+                    multiline
+                    numberOfLines={8}
+                    placeholder="Paste or edit the source document here..."
+                    placeholderTextColor={Colors.light.subtle}
+                    testID="sourceTextInput"
+                  />
+                  <View style={styles.sourceActions}>
+                    <TouchableOpacity 
+                      onPress={() => setShowSourceEditor(false)} 
+                      style={styles.sourceActionButton}
+                    >
+                      <Text style={styles.sourceActionText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={handleUpdateSource} 
+                      style={[styles.sourceActionButton, styles.sourceActionButtonPrimary]}
+                    >
+                      <Text style={styles.sourceActionTextPrimary}>Update</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <ScrollView style={styles.messagesContainer} showsVerticalScrollIndicator={false}>
+                {messages.map((message) => (
+                  <View
+                    key={message.id}
+                    style={[
+                      styles.messageRow,
+                      message.role === 'user' ? styles.userMessageRow : styles.assistantMessageRow,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.messageBubble,
+                        message.role === 'user' ? styles.userMessage : styles.assistantMessage,
+                      ]}
+                    >
+                      {message.images && message.images.length > 0 && (
+                        <View style={styles.messageImages}>
+                          {message.images.map((img, index) => (
+                            <Image
+                              key={index}
+                              source={{ uri: img.uri }}
+                              style={styles.messageImage}
+                              resizeMode="cover"
+                            />
+                          ))}
                         </View>
-                        <Text style={styles.messageAnswer}>{message.answer}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-
-              <View style={styles.inputSection}>
-                <View style={styles.inputRow}>
-                  <View style={styles.aiIconSmall}>
-                    <View style={styles.aiIconGrid}>
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
+                      )}
+                      {message.content && (
+                        <Text
+                          style={[
+                            styles.messageText,
+                            message.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                          ]}
+                        >
+                          {message.content}
+                        </Text>
+                      )}
                     </View>
                   </View>
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      style={styles.textInput}
-                      value={inputText}
-                      onChangeText={setInputText}
-                      placeholder=""
-                      placeholderTextColor={Colors.light.subtle}
-                      multiline
-                      maxLength={500}
-                    />
+                ))}
+                
+                {isTyping && (
+                  <View style={[styles.messageRow, styles.assistantMessageRow]}>
+                    <View style={[styles.messageBubble, styles.assistantMessage]}>
+                      <View style={styles.typingIndicator}>
+                        <View style={[styles.typingDot, styles.typingDot1]} />
+                        <View style={[styles.typingDot, styles.typingDot2]} />
+                        <View style={[styles.typingDot, styles.typingDot3]} />
+                      </View>
+                    </View>
                   </View>
+                )}
+              </ScrollView>
+
+              <View style={styles.inputContainer}>
+                {selectedImages.length > 0 && (
+                  <View style={styles.selectedImagesContainer}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      {selectedImages.map((img, index) => (
+                        <View key={index} style={styles.selectedImageWrapper}>
+                          <Image source={{ uri: img.uri }} style={styles.selectedImage} />
+                          <TouchableOpacity
+                            onPress={() => removeImage(index)}
+                            style={styles.removeImageButton}
+                          >
+                            <X color="#FFFFFF" size={12} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+                
+                <View style={styles.inputRow}>
+                  <View style={styles.inputActions}>
+                    <TouchableOpacity
+                      onPress={() => pickImage(true)}
+                      style={styles.inputActionButton}
+                      disabled={isLoadingImage}
+                    >
+                      <Camera color={Colors.light.subtle} size={18} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => pickImage(false)}
+                      style={styles.inputActionButton}
+                      disabled={isLoadingImage}
+                    >
+                      <ImageIcon color={Colors.light.subtle} size={18} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <TextInput
+                    style={styles.textInput}
+                    value={inputText}
+                    onChangeText={setInputText}
+                    placeholder="Ask me anything..."
+                    placeholderTextColor={Colors.light.subtle}
+                    multiline
+                    maxLength={500}
+                  />
+                  
                   <TouchableOpacity
-                    style={styles.sendButtonLarge}
-                    onPress={handleSendMessage}
+                    onPress={sendMessage}
+                    style={[
+                      styles.sendButton,
+                      (!inputText.trim() && selectedImages.length === 0) && styles.sendButtonDisabled
+                    ]}
+                    disabled={!inputText.trim() && selectedImages.length === 0}
                   >
-                    <Send size={20} color="white" />
+                    <Send 
+                      color={(inputText.trim() || selectedImages.length > 0) ? Colors.light.tint : Colors.light.subtle} 
+                      size={18} 
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -231,93 +520,180 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
             <View style={styles.expandedContent}>
               <View style={styles.expandedHeader}>
                 <View style={styles.headerLeft}>
-                  <View style={styles.aiIconLarge}>
-                    <View style={styles.aiIconGrid}>
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    </View>
-                  </View>
                   <View>
                     <Text style={styles.headerTitle}>AI Assistant</Text>
-                    <Text style={styles.headerSubtitle}>Tap to speak</Text>
+                    <Text style={styles.headerSubtitle}>Ask me anything</Text>
                   </View>
                 </View>
-                <View style={styles.headerRight}>
-                  <TouchableOpacity style={styles.headerButton}>
-                    <Bell size={18} color={Colors.light.subtle} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.headerButton}>
-                    <Settings size={18} color={Colors.light.subtle} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={toggleExpanded} style={styles.closeButton}>
-                    <X size={18} color={Colors.light.subtle} />
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity onPress={toggleExpanded} style={styles.closeButton}>
+                  <X size={18} color={Colors.light.subtle} />
+                </TouchableOpacity>
               </View>
 
-              <View style={styles.chatArea}>
-                <View style={styles.welcomeMessage}>
-                  <Text style={styles.welcomeText}>
-                    How can I help you today?
-                  </Text>
+              {contractData && (
+                <View style={styles.aiActions}>
+                  <TouchableOpacity 
+                    onPress={handleFillWithAI} 
+                    style={styles.aiActionButton}
+                    testID="aiFillButton"
+                  >
+                    <Wand2 color={Colors.light.tint} size={16} />
+                    <Text style={styles.aiActionText}>Fill with AI</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => setShowSourceEditor(!showSourceEditor)} 
+                    style={styles.aiActionButton}
+                    testID="editSourceButton"
+                  >
+                    <FileText color={Colors.light.tint} size={16} />
+                    <Text style={styles.aiActionText}>Edit Source</Text>
+                  </TouchableOpacity>
                 </View>
-                
-                <View style={styles.chatHistory}>
-                  {chatMessages.map((message) => {
-                    const IconComponent = message.icon;
-                    return (
-                      <View key={message.id} style={styles.chatMessage}>
-                        <View style={styles.messageHeader}>
-                          <View style={styles.messageIcon}>
-                            <IconComponent size={16} color={Colors.light.subtle} />
-                          </View>
-                          <Text style={styles.messageQuestion}>{message.question}</Text>
+              )}
+
+              {showSourceEditor && contractData && (
+                <View style={styles.sourceEditor}>
+                  <Text style={styles.sourceEditorLabel}>Source Document</Text>
+                  <TextInput
+                    style={styles.sourceInput}
+                    value={sourceText}
+                    onChangeText={setSourceText}
+                    multiline
+                    numberOfLines={8}
+                    placeholder="Paste or edit the source document here..."
+                    placeholderTextColor={Colors.light.subtle}
+                    testID="sourceTextInput"
+                  />
+                  <View style={styles.sourceActions}>
+                    <TouchableOpacity 
+                      onPress={() => setShowSourceEditor(false)} 
+                      style={styles.sourceActionButton}
+                    >
+                      <Text style={styles.sourceActionText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={handleUpdateSource} 
+                      style={[styles.sourceActionButton, styles.sourceActionButtonPrimary]}
+                    >
+                      <Text style={styles.sourceActionTextPrimary}>Update</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <ScrollView style={styles.messagesContainer} showsVerticalScrollIndicator={false}>
+                {messages.map((message) => (
+                  <View
+                    key={message.id}
+                    style={[
+                      styles.messageRow,
+                      message.role === 'user' ? styles.userMessageRow : styles.assistantMessageRow,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.messageBubble,
+                        message.role === 'user' ? styles.userMessage : styles.assistantMessage,
+                      ]}
+                    >
+                      {message.images && message.images.length > 0 && (
+                        <View style={styles.messageImages}>
+                          {message.images.map((img, index) => (
+                            <Image
+                              key={index}
+                              source={{ uri: img.uri }}
+                              style={styles.messageImage}
+                              resizeMode="cover"
+                            />
+                          ))}
                         </View>
-                        <Text style={styles.messageAnswer}>{message.answer}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-
-              <View style={styles.inputSection}>
-                <View style={styles.inputRow}>
-                  <View style={styles.aiIconSmall}>
-                    <View style={styles.aiIconGrid}>
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.subtle }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                      <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
+                      )}
+                      {message.content && (
+                        <Text
+                          style={[
+                            styles.messageText,
+                            message.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                          ]}
+                        >
+                          {message.content}
+                        </Text>
+                      )}
                     </View>
                   </View>
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      style={styles.textInput}
-                      value={inputText}
-                      onChangeText={setInputText}
-                      placeholder=""
-                      placeholderTextColor={Colors.light.subtle}
-                      multiline
-                      maxLength={500}
-                    />
+                ))}
+                
+                {isTyping && (
+                  <View style={[styles.messageRow, styles.assistantMessageRow]}>
+                    <View style={[styles.messageBubble, styles.assistantMessage]}>
+                      <View style={styles.typingIndicator}>
+                        <View style={[styles.typingDot, styles.typingDot1]} />
+                        <View style={[styles.typingDot, styles.typingDot2]} />
+                        <View style={[styles.typingDot, styles.typingDot3]} />
+                      </View>
+                    </View>
                   </View>
+                )}
+              </ScrollView>
+
+              <View style={styles.inputContainer}>
+                {selectedImages.length > 0 && (
+                  <View style={styles.selectedImagesContainer}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      {selectedImages.map((img, index) => (
+                        <View key={index} style={styles.selectedImageWrapper}>
+                          <Image source={{ uri: img.uri }} style={styles.selectedImage} />
+                          <TouchableOpacity
+                            onPress={() => removeImage(index)}
+                            style={styles.removeImageButton}
+                          >
+                            <X color="#FFFFFF" size={12} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+                
+                <View style={styles.inputRow}>
+                  <View style={styles.inputActions}>
+                    <TouchableOpacity
+                      onPress={() => pickImage(true)}
+                      style={styles.inputActionButton}
+                      disabled={isLoadingImage}
+                    >
+                      <Camera color={Colors.light.subtle} size={18} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => pickImage(false)}
+                      style={styles.inputActionButton}
+                      disabled={isLoadingImage}
+                    >
+                      <ImageIcon color={Colors.light.subtle} size={18} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <TextInput
+                    style={styles.textInput}
+                    value={inputText}
+                    onChangeText={setInputText}
+                    placeholder="Ask me anything..."
+                    placeholderTextColor={Colors.light.subtle}
+                    multiline
+                    maxLength={500}
+                  />
+                  
                   <TouchableOpacity
-                    style={styles.sendButtonLarge}
-                    onPress={handleSendMessage}
+                    onPress={sendMessage}
+                    style={[
+                      styles.sendButton,
+                      (!inputText.trim() && selectedImages.length === 0) && styles.sendButtonDisabled
+                    ]}
+                    disabled={!inputText.trim() && selectedImages.length === 0}
                   >
-                    <Send size={20} color="white" />
+                    <Send 
+                      color={(inputText.trim() || selectedImages.length > 0) ? Colors.light.tint : Colors.light.subtle} 
+                      size={18} 
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -331,8 +707,7 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
         style={[
           styles.navbar,
           {
-            bottom: insets.bottom,
-            transform: [{ scale: scaleAnim }],
+            opacity: navbarOpacity,
           },
         ]}
       >
@@ -341,7 +716,7 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
             <View style={styles.navbarContent}>
               <TouchableOpacity
                 style={styles.navbarButton}
-onPress={() => {
+                onPress={() => {
                   try {
                     router.replace('/dashboard');
                   } catch (error) {
@@ -355,7 +730,7 @@ onPress={() => {
 
               <TouchableOpacity
                 style={styles.navbarButton}
-onPress={() => {
+                onPress={() => {
                   try {
                     router.replace('/contract');
                   } catch (error) {
@@ -372,24 +747,12 @@ onPress={() => {
                 onPress={toggleExpanded}
                 testID="aiAssistantButton"
               >
-                <View style={styles.centralAIIcon}>
-                  <View style={styles.aiIconGrid}>
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: '#666' }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: '#666' }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: '#666' }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                  </View>
-                </View>
+                <Sparkles size={24} color={Colors.light.tint} />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.navbarButton}
-onPress={() => {
+                onPress={() => {
                   try {
                     router.replace('/');
                   } catch (error) {
@@ -415,7 +778,7 @@ onPress={() => {
             <View style={styles.navbarContent}>
               <TouchableOpacity
                 style={styles.navbarButton}
-onPress={() => {
+                onPress={() => {
                   try {
                     router.replace('/dashboard');
                   } catch (error) {
@@ -429,7 +792,7 @@ onPress={() => {
 
               <TouchableOpacity
                 style={styles.navbarButton}
-onPress={() => {
+                onPress={() => {
                   try {
                     router.replace('/contract');
                   } catch (error) {
@@ -446,24 +809,12 @@ onPress={() => {
                 onPress={toggleExpanded}
                 testID="aiAssistantButton"
               >
-                <View style={styles.centralAIIcon}>
-                  <View style={styles.aiIconGrid}>
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: '#666' }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: '#666' }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: '#666' }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                    <View style={[styles.aiIconDot, { backgroundColor: Colors.light.tint }]} />
-                  </View>
-                </View>
+                <Sparkles size={24} color={Colors.light.tint} />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.navbarButton}
-onPress={() => {
+                onPress={() => {
                   try {
                     router.replace('/');
                   } catch (error) {
@@ -486,17 +837,23 @@ onPress={() => {
           </View>
         )}
       </Animated.View>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    zIndex: 1000,
+  },
   backdrop: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: -1000,
+    left: -1000,
+    right: -1000,
+    bottom: -100,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     zIndex: 999,
   },
@@ -504,13 +861,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   expandedContainer: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    height: 500,
-    zIndex: 1000,
     borderRadius: 16,
     overflow: 'hidden',
+    marginBottom: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   expandedBlur: {
     flex: 1,
@@ -537,41 +901,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  aiIconLarge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2A2A2A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#444',
-  },
-  aiIconSmall: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2A2A2A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#444',
-  },
-  aiIconGrid: {
-    width: 12,
-    height: 12,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  aiIconDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    margin: 0.5,
-  },
   headerTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: Colors.light.text,
   },
   headerSubtitle: {
@@ -579,115 +911,237 @@ const styles = StyleSheet.create({
     color: Colors.light.subtle,
     marginTop: 2,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerButton: {
-    padding: 8,
-  },
   closeButton: {
     padding: 4,
   },
-  chatArea: {
-    flex: 1,
-  },
-  welcomeMessage: {
-    backgroundColor: Colors.light.surface + '99',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.border + '4D',
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: Colors.light.text,
-    fontWeight: '500',
-  },
-  chatHistory: {
+  aiActions: {
+    flexDirection: 'row',
     gap: 12,
+    marginBottom: 16,
   },
-  chatMessage: {
-    backgroundColor: Colors.light.surface + '66',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.border + '33',
-  },
-  messageHeader: {
+  aiActionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
+    backgroundColor: Colors.light.surface,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  aiActionText: {
+    color: Colors.light.tint,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  sourceEditor: {
+    marginBottom: 16,
+  },
+  sourceEditorLabel: {
+    color: Colors.light.text,
+    fontSize: 14,
+    fontWeight: '600' as const,
     marginBottom: 8,
   },
-  messageIcon: {
-    width: 24,
-    height: 24,
+  sourceInput: {
+    backgroundColor: Colors.light.inputBg,
     borderRadius: 12,
+    padding: 12,
+    color: Colors.light.text,
+    fontSize: 13,
+    textAlignVertical: 'top' as const,
+    minHeight: 120,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginBottom: 12,
+  },
+  sourceActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  sourceActionButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
     backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  sourceActionButtonPrimary: {
+    backgroundColor: Colors.light.tint,
+    borderColor: Colors.light.tint,
+  },
+  sourceActionText: {
+    color: Colors.light.text,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  sourceActionTextPrimary: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  messagesContainer: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  messageRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 8,
+  },
+  userMessageRow: {
+    justifyContent: 'flex-end',
+  },
+  assistantMessageRow: {
+    justifyContent: 'flex-start',
+  },
+  messageBubble: {
+    maxWidth: '80%',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  userMessage: {
+    backgroundColor: Colors.light.tint,
+  },
+  assistantMessage: {
+    backgroundColor: Colors.light.surface,
+  },
+  messageText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  userMessageText: {
+    color: '#FFFFFF',
+  },
+  assistantMessageText: {
+    color: Colors.light.text,
+  },
+  messageImages: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginBottom: 8,
+  },
+  messageImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+  },
+  typingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  typingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.light.subtle,
+  },
+  typingDot1: {
+    opacity: 0.4,
+  },
+  typingDot2: {
+    opacity: 0.7,
+  },
+  typingDot3: {
+    opacity: 1,
+  },
+  inputContainer: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.border,
+    paddingTop: 12,
+  },
+  selectedImagesContainer: {
+    marginBottom: 12,
+  },
+  selectedImageWrapper: {
+    position: 'relative',
+    marginRight: 8,
+  },
+  selectedImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.light.destructive,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  messageQuestion: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.light.text,
-    flex: 1,
-  },
-  messageAnswer: {
-    fontSize: 14,
-    color: Colors.light.subtle,
-    lineHeight: 20,
-  },
-  inputSection: {
-    marginTop: 16,
-  },
   inputRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    alignItems: 'flex-end',
+    gap: 8,
   },
-  inputContainer: {
-    flex: 1,
-    backgroundColor: Colors.light.inputBg,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  inputActions: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  inputActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
   textInput: {
+    flex: 1,
+    backgroundColor: Colors.light.inputBg,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     color: Colors.light.text,
     fontSize: 14,
-    maxHeight: 80,
-    paddingVertical: 4,
+    maxHeight: 100,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
-  sendButtonLarge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#8BC34A',
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
   },
   navbar: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
+    flexDirection: 'row',
     height: 60,
-    zIndex: 1000,
     borderRadius: 30,
     overflow: 'hidden',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   navbarBlur: {
     flex: 1,
@@ -716,11 +1170,5 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#444',
     marginHorizontal: 8,
-  },
-  centralAIIcon: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
