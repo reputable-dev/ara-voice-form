@@ -412,13 +412,6 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
                   message.role === 'user' ? styles.userMessageRow : styles.assistantMessageRow,
                 ]}
               >
-                <View style={styles.messageIcon}>
-                  {message.role === 'user' ? (
-                    <User color={Colors.light.subtle} size={16} />
-                  ) : (
-                    <View />
-                  )}
-                </View>
                 <View
                   style={[
                     styles.messageBubble,
@@ -453,9 +446,6 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
             
             {isTyping && (
               <View style={[styles.messageRow, styles.assistantMessageRow]}>
-                <View style={styles.messageIcon}>
-                  <View />
-                </View>
                 <View style={[styles.messageBubble, styles.assistantMessage]}>
                   <View style={styles.typingIndicator}>
                     <View style={[styles.typingDot, styles.typingDot1]} />
