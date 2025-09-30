@@ -192,13 +192,20 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
         body: JSON.stringify(requestBody),
       });
       
+      const responseText = await response.text();
+      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Gemini API error:', response.status, errorText);
+        console.error('Gemini API error:', response.status, responseText);
         throw new Error(`API request failed: ${response.status}`);
       }
       
-      const data = await response.json();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response:', responseText);
+        throw new Error('Invalid JSON response from API');
+      }
       console.log('Gemini API response:', JSON.stringify(data, null, 2));
       
       if (data.candidates && data.candidates[0] && data.candidates[0].content) {
