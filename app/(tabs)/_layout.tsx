@@ -10,9 +10,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors.light.tabIconSelected,
         tabBarInactiveTintColor: Colors.light.tabIconDefault,
         tabBarStyle: { display: 'none' },
-        headerStyle: { backgroundColor: Colors.light.background },
-        headerTitleStyle: { color: Colors.light.text },
-        headerTintColor: Colors.light.tabIconSelected,
+        headerShown: false,
       }}
     >
       <Tabs.Screen
