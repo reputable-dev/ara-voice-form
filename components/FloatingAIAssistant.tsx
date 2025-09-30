@@ -550,13 +550,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} testID="voiceButton">
-          <Mic color={Colors.light.subtle} size={18} />
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} testID="chatButton">
-          <MessageSquare color={Colors.light.subtle} size={18} />
-        </TouchableOpacity>
       </Animated.View>
     </View>
   );
