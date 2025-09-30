@@ -515,7 +515,7 @@ export default function ContractScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
+  container: { flex: 1, backgroundColor: '#1a1a1a' },
   content: { padding: 16, gap: 12 },
   grid: { gap: 12 },
   panel: { gap: 12 },
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: "#0B0B0B",
     borderWidth: 1,
-    borderColor: "#1F2937",
+    borderColor: "rgba(255,255,255,0.1)",
     borderRadius: 12,
     color: "#E5E7EB",
     fontSize: 13,
@@ -536,9 +536,9 @@ const styles = StyleSheet.create({
   },
   actionsRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
   btn: {
-    backgroundColor: "#111111",
+    backgroundColor: "rgba(0,0,0,0.50)",
     borderWidth: 1,
-    borderColor: "#1F2937",
+    borderColor: "rgba(255,255,255,0.1)",
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   },
   btnText: { color: "#D1D5DB", fontSize: 13, fontWeight: "600" },
   btnPrimary: {
-    backgroundColor: "rgba(16,185,129,0.15)",
+    backgroundColor: "rgba(16,185,129,0.20)",
     borderWidth: 1,
     borderColor: "rgba(16,185,129,0.35)",
     paddingHorizontal: 12,
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  btnPrimaryText: { color: "#D1FAE5", fontSize: 13, fontWeight: "700" },
+  btnPrimaryText: { color: "#A7F3D0", fontSize: 13, fontWeight: "700" },
   aiBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: "#0B0B0B",
     borderWidth: 1,
-    borderColor: "#1F2937",
+    borderColor: "rgba(255,255,255,0.1)",
     borderRadius: 12,
     color: "#E5E7EB",
     fontSize: 13,

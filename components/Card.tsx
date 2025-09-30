@@ -13,10 +13,10 @@ export default memo(CardComponent);
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    backgroundColor: "rgba(17,17,17,0.9)",
+    borderRadius: 24,
+    backgroundColor: "rgba(0,0,0,0.50)",
     borderWidth: 1,
-    borderColor: "#1F2937",
-    padding: 14,
+    borderColor: "rgba(255,255,255,0.1)",
+    padding: 16,
   },
 });

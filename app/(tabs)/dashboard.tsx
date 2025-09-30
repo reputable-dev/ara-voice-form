@@ -266,7 +266,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#1a1a1a',
   },
   content: {
     padding: 16,
@@ -322,7 +322,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mainCard: {
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.50)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   mainCardContent: {
     flexDirection: 'row',
@@ -373,6 +376,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
   mainCardSubtitle: {
     color: Colors.light.subtle,
