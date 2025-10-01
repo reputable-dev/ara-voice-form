@@ -335,7 +335,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         pointerEvents={isExpanded ? 'auto' : 'none'}
       >
         {Platform.OS === 'ios' ? (
-          <BlurView intensity={80} style={styles.expandedBlur}>
+          <BlurView intensity={95} style={styles.expandedBlur}>
             <View style={styles.expandedContent}>
               <View style={styles.expandedHeader}>
                 <View style={styles.headerLeft}>
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
     left: -1000,
     right: -1000,
     bottom: -100,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'transparent',
     zIndex: 999,
   },
   backdropTouchable: {
@@ -889,7 +889,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   androidBlur: {
-    backgroundColor: 'rgba(0,0,0,0.95)',
+    backgroundColor: 'rgba(0,0,0,0.98)',
   },
   expandedContent: {
     flex: 1,
