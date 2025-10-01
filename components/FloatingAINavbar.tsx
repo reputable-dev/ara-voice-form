@@ -301,7 +301,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
   if (!visible) return null;
 
   return (
-    <View style={[styles.mainContainer, { bottom: insets.bottom }]}>
+    <View style={[styles.mainContainer, { paddingBottom: insets.bottom }]}>
       {/* Backdrop */}
       {isExpanded && (
         <Animated.View
@@ -846,6 +846,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
+    bottom: 0,
     zIndex: 1000,
   },
   backdrop: {
