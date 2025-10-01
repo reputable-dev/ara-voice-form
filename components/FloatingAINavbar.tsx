@@ -889,7 +889,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   androidBlur: {
-    backgroundColor: 'rgba(0,0,0,0.98)',
+    backgroundColor: 'rgba(0,0,0,0.9)',
   },
   expandedContent: {
     flex: 1,
