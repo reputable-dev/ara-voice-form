@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
     left: -1000,
     right: -1000,
     bottom: -100,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     zIndex: 999,
   },
   backdropTouchable: {
