@@ -290,7 +290,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
 
   const drawerHeight = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, screenHeight * 0.7],
+    outputRange: [0, screenHeight * 0.65],
   });
 
   const navbarOpacity = slideAnim.interpolate({
@@ -326,7 +326,10 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
           styles.expandedContainer,
           {
             height: drawerHeight,
-            marginBottom: isExpanded ? 0 : -screenHeight * 0.7,
+            transform: [{ translateY: slideAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [screenHeight * 0.65, 0],
+            })}],
           },
         ]}
         pointerEvents={isExpanded ? 'auto' : 'none'}
@@ -844,10 +847,12 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
 const styles = StyleSheet.create({
   mainContainer: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: 0,
+    right: 0,
     bottom: 0,
     zIndex: 1000,
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   backdrop: {
     position: 'absolute',
@@ -862,6 +867,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   expandedContainer: {
+    width: '100%',
+    maxWidth: 600,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 8,
@@ -1128,6 +1135,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   navbar: {
+    width: '100%',
+    maxWidth: 600,
     flexDirection: 'row',
     height: 60,
     borderRadius: 30,
