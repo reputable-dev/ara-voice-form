@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   androidBlur: {
-    backgroundColor: Colors.light.card + 'F2',
+    backgroundColor: 'rgba(0,0,0,0.95)',
   },
   expandedContent: {
     flex: 1,
@@ -894,7 +894,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border + '4D',
+    borderBottomColor: 'rgba(255,255,255,0.3)',
   },
   headerLeft: {
     flexDirection: 'row',
