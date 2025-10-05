@@ -335,7 +335,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         pointerEvents={isExpanded ? 'auto' : 'none'}
       >
         {Platform.OS === 'ios' ? (
-          <BlurView intensity={95} style={styles.expandedBlur}>
+          <View style={[styles.expandedBlur, styles.androidBlur]}>
             <View style={styles.expandedContent}>
               <View style={styles.expandedHeader}>
                 <View style={styles.headerLeft}>
@@ -517,7 +517,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 </View>
               </View>
             </View>
-          </BlurView>
+          </View>
         ) : (
           <View style={[styles.expandedBlur, styles.androidBlur]}>
             <View style={styles.expandedContent}>
