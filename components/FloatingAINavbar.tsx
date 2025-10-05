@@ -52,8 +52,8 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       id: '1',
       role: 'assistant',
       content: contractData 
-        ? 'Hi! I\'m your AI assistant. I can help you fill out contract forms, parse source documents, and answer questions. How can I assist you today?'
-        : 'Hi! I\'m your AI assistant. How can I help you today?',
+        ? 'Hi! I\'m ARA, your AI assistant. I can help you fill out contract forms, parse source documents, and answer questions. How can I assist you today?'
+        : 'Hi! I\'m ARA, your AI assistant. How can I help you today?',
       timestamp: new Date(),
     },
   ]);
@@ -340,7 +340,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
               <View style={styles.expandedHeader}>
                 <View style={styles.headerLeft}>
                   <View>
-                    <Text style={styles.headerTitle}>AI Assistant</Text>
+                    <Text style={styles.headerTitle}>ARA</Text>
                     <Text style={styles.headerSubtitle}>Ask me anything</Text>
                   </View>
                 </View>
@@ -524,7 +524,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
               <View style={styles.expandedHeader}>
                 <View style={styles.headerLeft}>
                   <View>
-                    <Text style={styles.headerTitle}>AI Assistant</Text>
+                    <Text style={styles.headerTitle}>ARA</Text>
                     <Text style={styles.headerSubtitle}>Ask me anything</Text>
                   </View>
                 </View>
