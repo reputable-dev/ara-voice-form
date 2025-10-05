@@ -15,7 +15,7 @@ import {
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
-import { Send, X, MessageSquare, Home, FileCog, MoreHorizontal, Sparkles, Wand2, FileText, Camera, ImageIcon } from 'lucide-react-native';
+import { Send, X, MessageSquare, Home, FileCog, MoreHorizontal, Sparkles, Wand2, FileText, Camera, ImageIcon, Bot } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { ContractFormData } from '@/types/contract';
@@ -720,6 +720,9 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
               <TouchableOpacity
                 style={styles.navbarButton}
                 onPress={() => {
+                  if (isExpanded) {
+                    toggleExpanded();
+                  }
                   try {
                     router.replace('/dashboard');
                   } catch (error) {
@@ -728,12 +731,19 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 }}
                 testID="homeTab"
               >
-                <Home size={24} color={pathname === '/dashboard' ? Colors.light.tint : Colors.light.subtle} />
+                {isExpanded ? (
+                  <Bot size={24} color={Colors.light.tint} />
+                ) : (
+                  <Home size={24} color={pathname === '/dashboard' ? Colors.light.tint : Colors.light.subtle} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.navbarButton}
                 onPress={() => {
+                  if (isExpanded) {
+                    toggleExpanded();
+                  }
                   try {
                     router.replace('/contract');
                   } catch (error) {
@@ -742,7 +752,11 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 }}
                 testID="contractTab"
               >
-                <FileCog size={24} color={pathname === '/contract' ? Colors.light.tint : Colors.light.subtle} />
+                {isExpanded ? (
+                  <Bot size={24} color={Colors.light.tint} />
+                ) : (
+                  <FileCog size={24} color={pathname === '/contract' ? Colors.light.tint : Colors.light.subtle} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -750,12 +764,19 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 onPress={toggleExpanded}
                 testID="aiAssistantButton"
               >
-                <Sparkles size={24} color={Colors.light.tint} />
+                {isExpanded ? (
+                  <X size={24} color={Colors.light.tint} />
+                ) : (
+                  <Sparkles size={24} color={Colors.light.tint} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.navbarButton}
                 onPress={() => {
+                  if (isExpanded) {
+                    toggleExpanded();
+                  }
                   try {
                     router.replace('/');
                   } catch (error) {
@@ -764,15 +785,27 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 }}
                 testID="assistantTab"
               >
-                <MessageSquare size={24} color={pathname === '/' ? Colors.light.tint : Colors.light.subtle} />
+                {isExpanded ? (
+                  <Bot size={24} color={Colors.light.tint} />
+                ) : (
+                  <MessageSquare size={24} color={pathname === '/' ? Colors.light.tint : Colors.light.subtle} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.navbarButton}
-                onPress={() => {}}
+                onPress={() => {
+                  if (isExpanded) {
+                    toggleExpanded();
+                  }
+                }}
                 testID="moreTab"
               >
-                <MoreHorizontal size={24} color={Colors.light.subtle} />
+                {isExpanded ? (
+                  <Bot size={24} color={Colors.light.tint} />
+                ) : (
+                  <MoreHorizontal size={24} color={Colors.light.subtle} />
+                )}
               </TouchableOpacity>
             </View>
           </BlurView>
@@ -782,6 +815,9 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
               <TouchableOpacity
                 style={styles.navbarButton}
                 onPress={() => {
+                  if (isExpanded) {
+                    toggleExpanded();
+                  }
                   try {
                     router.replace('/dashboard');
                   } catch (error) {
@@ -790,12 +826,19 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 }}
                 testID="homeTab"
               >
-                <Home size={24} color={pathname === '/dashboard' ? Colors.light.tint : Colors.light.subtle} />
+                {isExpanded ? (
+                  <Bot size={24} color={Colors.light.tint} />
+                ) : (
+                  <Home size={24} color={pathname === '/dashboard' ? Colors.light.tint : Colors.light.subtle} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.navbarButton}
                 onPress={() => {
+                  if (isExpanded) {
+                    toggleExpanded();
+                  }
                   try {
                     router.replace('/contract');
                   } catch (error) {
@@ -804,7 +847,11 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 }}
                 testID="contractTab"
               >
-                <FileCog size={24} color={pathname === '/contract' ? Colors.light.tint : Colors.light.subtle} />
+                {isExpanded ? (
+                  <Bot size={24} color={Colors.light.tint} />
+                ) : (
+                  <FileCog size={24} color={pathname === '/contract' ? Colors.light.tint : Colors.light.subtle} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -812,12 +859,19 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 onPress={toggleExpanded}
                 testID="aiAssistantButton"
               >
-                <Sparkles size={24} color={Colors.light.tint} />
+                {isExpanded ? (
+                  <X size={24} color={Colors.light.tint} />
+                ) : (
+                  <Sparkles size={24} color={Colors.light.tint} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.navbarButton}
                 onPress={() => {
+                  if (isExpanded) {
+                    toggleExpanded();
+                  }
                   try {
                     router.replace('/');
                   } catch (error) {
@@ -826,15 +880,27 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 }}
                 testID="assistantTab"
               >
-                <MessageSquare size={24} color={pathname === '/' ? Colors.light.tint : Colors.light.subtle} />
+                {isExpanded ? (
+                  <Bot size={24} color={Colors.light.tint} />
+                ) : (
+                  <MessageSquare size={24} color={pathname === '/' ? Colors.light.tint : Colors.light.subtle} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.navbarButton}
-                onPress={() => {}}
+                onPress={() => {
+                  if (isExpanded) {
+                    toggleExpanded();
+                  }
+                }}
                 testID="moreTab"
               >
-                <MoreHorizontal size={24} color={Colors.light.subtle} />
+                {isExpanded ? (
+                  <Bot size={24} color={Colors.light.tint} />
+                ) : (
+                  <MoreHorizontal size={24} color={Colors.light.subtle} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
