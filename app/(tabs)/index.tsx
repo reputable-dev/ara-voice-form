@@ -1,56 +1,118 @@
 import React, { useMemo, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform } from "react-native";
 import { Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import Card from "@/components/Card";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { Mic, MessageSquare, Sparkles, Send, Info, Book } from "lucide-react-native";
+import VoiceRecorder from "@/components/VoiceRecorder";
+import { Mic, MessageSquare, Sparkles, Info, User } from "lucide-react-native";
 
-type Message = { id: string; role: "assistant" | "user"; text: string; time?: string };
+type FormData = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  occupation: string;
+  message: string;
+};
 
-export default function AssistantScreen() {
+export default function VoiceFillScreen() {
   const insets = useSafeAreaInsets();
-  const [question, setQuestion] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "m1",
-      role: "assistant",
-      text: "Ask ARA is ready. Type or speak your question. Answers include citations to the knowledge base.",
-    },
-  ]);
-  const [isAsking, setIsAsking] = useState<boolean>(false);
+  const [showRecorder, setShowRecorder] = useState<boolean>(false);
+  const [transcribedText, setTranscribedText] = useState<string>("");
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    occupation: "",
+    message: "",
+  });
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  const onClear = useCallback(() => {
-    setQuestion("");
+  const handleTranscription = useCallback(async (text: string) => {
+    console.log('Transcribed text:', text);
+    setTranscribedText(text);
+    setShowRecorder(false);
+    setIsProcessing(true);
+
+    try {
+      const apiKey = 'AIzaSyCC5LnBazvUeGJrg-QDQMB7bp64FV5DMVk';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+      
+      const prompt = `Extract structured information from the following text and return it as JSON with these exact fields: name, email, phone, address, occupation, message. If a field is not mentioned, use an empty string. Only return the JSON object, nothing else.\n\nText: ${text}`;
+      
+      const requestBody = {
+        contents: [{
+          role: 'user',
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 1,
+          topP: 1,
+          maxOutputTokens: 1024,
+        },
+      };
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        const aiResponse = data.candidates[0].content.parts[0].text;
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+          const parsedData = JSON.parse(jsonMatch[0]);
+          setFormData({
+            name: parsedData.name || "",
+            email: parsedData.email || "",
+            phone: parsedData.phone || "",
+            address: parsedData.address || "",
+            occupation: parsedData.occupation || "",
+            message: parsedData.message || text,
+          });
+        } else {
+          setFormData(prev => ({ ...prev, message: text }));
+        }
+      }
+    } catch (error) {
+      console.error('Error processing transcription:', error);
+      setFormData(prev => ({ ...prev, message: text }));
+    } finally {
+      setIsProcessing(false);
+    }
   }, []);
 
-  const onAsk = useCallback(async () => {
-    if (!question.trim()) return;
-    try {
-      setIsAsking(true);
-      const now = new Date();
-      setMessages((prev) => [
-        ...prev,
-        { id: String(now.getTime()) + "-u", role: "user", text: question, time: now.toLocaleTimeString() },
-      ]);
-      await new Promise((r) => setTimeout(r, 600));
-      const answer =
-        "The mobilisation checklist includes site induction, scope confirmation, cleaning chemical register, asset list capture, and SLA sign-off.\nSources: Mobilisation_Checklist.docx, SLA_Register_Q4.xlsx, Client Portal";
-      setMessages((prev) => [...prev, { id: String(now.getTime()) + "-a", role: "assistant", text: answer }]);
-      setQuestion("");
-    } catch (e) {
-      console.log("ask error", e);
-    } finally {
-      setIsAsking(false);
-    }
-  }, [question]);
+  const handleClearForm = useCallback(() => {
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      occupation: "",
+      message: "",
+    });
+    setTranscribedText("");
+  }, []);
 
   const headerRight = useMemo(
     () => function HeaderRight() {
       return (
         <View style={styles.headerRightContainer}>
-          <Book color={Colors.light.subtle} />
+          <Sparkles color={Colors.light.tint} />
         </View>
       );
     },
@@ -62,104 +124,177 @@ export default function AssistantScreen() {
       <>
         <Stack.Screen
           options={{
-            title: "Ask ARA",
+            title: "Voice Fill",
             headerRight,
           }}
         />
         <ScrollView 
           style={styles.container} 
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} 
-          testID="assistantScroll"
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]} 
+          testID="voiceFillScroll"
         >
           <Card style={styles.hero}>
-            <Text style={styles.h1}>Ask ARA — Knowledge Assistant</Text>
+            <Text style={styles.h1}>Voice Fill</Text>
             <View style={styles.badge}>
-              <Sparkles color="#A7F3D0" />
-              <Text style={styles.badgeText}>ARA Property Services • Ask questions • Get answers</Text>
+              <Mic color="#A7F3D0" />
+              <Text style={styles.badgeText}>Speak • Transcribe • Auto-fill</Text>
             </View>
             <Text style={styles.subtleCenter}>
-              A simple way to ask questions and get answers from the Ask ARA knowledge base. Use voice or text.
+              Press the record button, speak naturally, and watch your form fill automatically with AI-powered voice recognition.
             </Text>
           </Card>
 
-          <View style={styles.grid}>
-            <Card style={styles.left}>
-              <View style={styles.headerRow}>
-                <View style={styles.headerRowLeft}>
-                  <MessageSquare color="#A7F3D0" />
-                  <Text style={styles.headerTitle}>Ask a question</Text>
-                </View>
-                <Text style={styles.caption}>Answers come from the knowledge base</Text>
-              </View>
-              <TextInput
-                testID="assistantInput"
-                value={question}
-                onChangeText={setQuestion}
-                placeholder="Examples:
-• What are the chemical handling procedures for Site X?
-• Show me the latest cleaning scope for Building B."
-                placeholderTextColor="#6B7280"
-                multiline
-                style={styles.textarea}
+          {showRecorder ? (
+            <Card style={styles.recorderCard}>
+              <VoiceRecorder 
+                onTranscriptionComplete={handleTranscription}
+                onRecordingStateChange={(recording) => {
+                  if (!recording && Platform.OS !== 'web') {
+                    console.log('Recording stopped');
+                  }
+                }}
               />
-              <View style={styles.actionsRow}>
-                <View style={styles.actionsLeft}>
-                  <TouchableOpacity onPress={onClear} style={styles.btn} testID="clearQuestion">
+              <TouchableOpacity 
+                onPress={() => setShowRecorder(false)} 
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </Card>
+          ) : (
+            <>
+              <Card style={styles.formCard}>
+                <View style={styles.formHeader}>
+                  <View style={styles.headerRowLeft}>
+                    <User color="#A7F3D0" />
+                    <Text style={styles.headerTitle}>Contact Information</Text>
+                  </View>
+                  {transcribedText && (
+                    <View style={styles.aiBadge}>
+                      <Sparkles color="#A7F3D0" size={14} />
+                      <Text style={styles.aiBadgeText}>AI Filled</Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Full Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.name}
+                    onChangeText={(text) => setFormData({ ...formData, name: text })}
+                    placeholder="John Doe"
+                    placeholderTextColor="#6B7280"
+                    testID="nameInput"
+                  />
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.email}
+                    onChangeText={(text) => setFormData({ ...formData, email: text })}
+                    placeholder="john@example.com"
+                    placeholderTextColor="#6B7280"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    testID="emailInput"
+                  />
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Phone</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.phone}
+                    onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                    placeholder="+1 234 567 8900"
+                    placeholderTextColor="#6B7280"
+                    keyboardType="phone-pad"
+                    testID="phoneInput"
+                  />
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Address</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.address}
+                    onChangeText={(text) => setFormData({ ...formData, address: text })}
+                    placeholder="123 Main St, City, State"
+                    placeholderTextColor="#6B7280"
+                    testID="addressInput"
+                  />
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Occupation</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.occupation}
+                    onChangeText={(text) => setFormData({ ...formData, occupation: text })}
+                    placeholder="Software Engineer"
+                    placeholderTextColor="#6B7280"
+                    testID="occupationInput"
+                  />
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Message</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={formData.message}
+                    onChangeText={(text) => setFormData({ ...formData, message: text })}
+                    placeholder="Additional information..."
+                    placeholderTextColor="#6B7280"
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    testID="messageInput"
+                  />
+                </View>
+
+                <View style={styles.formActions}>
+                  <TouchableOpacity 
+                    onPress={handleClearForm} 
+                    style={styles.btn}
+                    testID="clearForm"
+                  >
                     <Text style={styles.btnText}>Clear</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => {}} style={styles.btnIcon} testID="voiceBtn">
-                    <Mic color="#D1D5DB" size={16} />
-                    <Text style={styles.btnText}>Voice</Text>
+                  <TouchableOpacity 
+                    onPress={() => setShowRecorder(true)} 
+                    style={styles.btnPrimary}
+                    disabled={isProcessing}
+                    testID="voiceBtn"
+                  >
+                    <Mic color="#A7F3D0" size={16} />
+                    <Text style={styles.btnPrimaryText}>
+                      {isProcessing ? 'Processing...' : 'Voice Fill'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={onAsk} disabled={isAsking} style={styles.btnPrimary} testID="askBtn">
-                  <Send color="#A7F3D0" size={16} />
-                  <Text style={styles.btnPrimaryText}>{isAsking ? "Asking..." : "Ask"}</Text>
-                </TouchableOpacity>
-              </View>
-            </Card>
+              </Card>
 
-            <Card style={styles.right}>
-              <View style={styles.headerRow}>
-                <View style={styles.headerRowLeft}>
-                  <Sparkles color="#A7F3D0" />
-                  <Text style={styles.headerTitle}>Answer</Text>
-                </View>
-                <View style={styles.headerRowRight}>
-                  <Info color="#9CA3AF" size={16} />
-                  <Text style={styles.caption}>Retrieved from authorised sources</Text>
-                </View>
-              </View>
-
-              <View style={styles.answersWrap}>
-                {messages.map((m) => (
-                  <View key={m.id} style={[styles.msg, m.role === "assistant" ? styles.msgAssistant : styles.msgUser]} testID={`msg-${m.id}`}>
-                    <Text style={styles.msgRole}>{m.role === "assistant" ? "Ask ARA" : "You"}</Text>
-                    <Text style={styles.msgText}>{m.text}</Text>
-                    {m.time ? <Text style={styles.msgTime}>{m.time}</Text> : null}
+              {transcribedText && (
+                <Card style={styles.transcriptionCard}>
+                  <View style={styles.headerRowLeft}>
+                    <MessageSquare color="#A7F3D0" />
+                    <Text style={styles.headerTitle}>Transcription</Text>
                   </View>
-                ))}
-              </View>
-
-              <View style={styles.footerRow}>
-                <Text style={styles.caption}>Citations and permissions are shown with each answer.</Text>
-                <View style={styles.footerActions}>
-                  <TouchableOpacity style={styles.btnSm} testID="clearAnswers">
-                    <Text style={styles.btnSmText}>Clear</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.btnSmPrimary} testID="speakBtn">
-                    <Mic color="#A7F3D0" size={14} />
-                    <Text style={styles.btnSmPrimaryText}>Speak</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Card>
-          </View>
+                  <Text style={styles.transcriptionText}>{transcribedText}</Text>
+                </Card>
+              )}
+            </>
+          )}
 
           <Card>
             <View style={styles.tipRow}>
               <Info color="#9CA3AF" />
-              <Text style={styles.tipText}>Keep questions specific. Include version, site, and owner to speed up validation.</Text>
+              <Text style={styles.tipText}>
+                Try saying: &quot;My name is John Doe, email john@example.com, phone 555-1234, I live at 123 Main Street, and I work as a software engineer.&quot;
+              </Text>
             </View>
           </Card>
         </ScrollView>
@@ -183,10 +318,10 @@ const styles = StyleSheet.create({
   },
   h1: { 
     color: "#F3F4F6", 
-    fontSize: 22, 
-    fontWeight: "700",
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
+    fontSize: 28, 
+    fontWeight: "700" as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 2,
   },
   badge: {
     flexDirection: "row",
@@ -200,98 +335,117 @@ const styles = StyleSheet.create({
     borderColor: "rgba(16,185,129,0.35)",
     borderRadius: 999,
   },
-  badgeText: { color: "#A7F3D0", fontStyle: "italic", fontSize: 13 },
-  subtleCenter: { color: "#D1D5DB", opacity: 0.85, fontSize: 14 },
-  grid: { gap: 12 },
-  left: { gap: 10 },
-  right: { gap: 10 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  badgeText: { color: "#A7F3D0", fontStyle: "italic" as const, fontSize: 13 },
+  subtleCenter: { color: "#D1D5DB", opacity: 0.85, fontSize: 14, lineHeight: 20 },
+  recorderCard: {
+    backgroundColor: "rgba(0,0,0,0.50)",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  formCard: {
+    gap: 16,
+    backgroundColor: "rgba(0,0,0,0.50)",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  formHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
   headerRowLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  headerRowRight: { flexDirection: "row", alignItems: "center", gap: 6 },
-  headerTitle: { color: "#E5E7EB", fontSize: 14, fontWeight: "600" },
-  caption: { color: "#9CA3AF", fontSize: 12 },
-  textarea: {
-    minHeight: 160,
-    padding: 12,
+  headerTitle: { color: "#E5E7EB", fontSize: 16, fontWeight: "600" as const },
+  aiBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(16,185,129,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(16,185,129,0.30)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  aiBadgeText: { color: "#D1FAE5", fontSize: 12, fontWeight: "600" as const },
+  formField: {
+    gap: 8,
+  },
+  label: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    fontWeight: "600" as const,
+  },
+  input: {
     backgroundColor: "#0B0B0B",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     borderRadius: 12,
+    padding: 12,
     color: "#E5E7EB",
     fontSize: 14,
-    textAlignVertical: "top",
   },
-  actionsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  actionsLeft: { flexDirection: "row", gap: 8 },
+  textArea: {
+    minHeight: 100,
+    textAlignVertical: "top" as const,
+  },
+  formActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginTop: 8,
+  },
   btn: {
     backgroundColor: "rgba(0,0,0,0.50)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 10,
   },
-  btnIcon: {
-    backgroundColor: "rgba(0,0,0,0.50)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 10,
-    flexDirection: "row",
-    gap: 6,
-    alignItems: "center",
-  },
-  btnText: { color: "#D1D5DB", fontSize: 12, fontWeight: "600" },
+  btnText: { color: "#D1D5DB", fontSize: 13, fontWeight: "600" as const },
   btnPrimary: {
     backgroundColor: "rgba(16,185,129,0.20)",
     borderWidth: 1,
     borderColor: "rgba(16,185,129,0.35)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 10,
     flexDirection: "row",
     gap: 6,
     alignItems: "center",
   },
-  btnPrimaryText: { color: "#A7F3D0", fontSize: 12, fontWeight: "700" },
-  answersWrap: { gap: 8 },
-  msg: {
+  btnPrimaryText: { color: "#A7F3D0", fontSize: 13, fontWeight: "700" as const },
+  cancelButton: {
+    alignSelf: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: "rgba(239,68,68,0.20)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: "rgba(0,0,0,0.40)",
-    borderRadius: 12,
-    padding: 10,
+    borderColor: "rgba(239,68,68,0.35)",
+    borderRadius: 10,
+    marginTop: 16,
   },
-  msgAssistant: {},
-  msgUser: { borderColor: "rgba(16,185,129,0.35)" },
-  msgRole: { color: "#E5E7EB", fontSize: 13, fontWeight: "600" },
-  msgText: { color: "#D1D5DB", marginTop: 4, lineHeight: 20, fontSize: 14 },
-  msgTime: { color: "#9CA3AF", marginTop: 6, fontSize: 11 },
-  footerRow: { marginTop: 4, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  btnSm: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  cancelButtonText: {
+    color: "#FCA5A5",
+    fontSize: 14,
+    fontWeight: "600" as const,
+  },
+  transcriptionCard: {
+    gap: 12,
     backgroundColor: "rgba(0,0,0,0.50)",
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    borderRadius: 8,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  btnSmText: { color: "#D1D5DB", fontSize: 12 },
-  btnSmPrimary: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "rgba(16,185,129,0.20)",
-    borderWidth: 1,
-    borderColor: "rgba(16,185,129,0.35)",
-    borderRadius: 8,
-    flexDirection: "row",
-    gap: 6,
-    alignItems: "center",
+  transcriptionText: {
+    color: "#D1D5DB",
+    fontSize: 14,
+    lineHeight: 20,
   },
-  btnSmPrimaryText: { color: "#A7F3D0", fontSize: 12, fontWeight: "700" },
-  tipRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  tipText: { color: "#9CA3AF", fontSize: 12, flex: 1 },
+  tipRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  tipText: { color: "#9CA3AF", fontSize: 12, flex: 1, lineHeight: 18 },
   headerRightContainer: { flexDirection: "row", gap: 8, paddingRight: 6 },
-  footerActions: { flexDirection: "row", gap: 8 },
 });

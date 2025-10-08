@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Bot, FileCog, Home } from "lucide-react-native";
+import { Mic } from "lucide-react-native";
 import React from "react";
 import Colors from "@/constants/colors";
 
@@ -16,22 +16,20 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Assistant",
-          tabBarIcon: ({ color }) => <Bot color={color} />,
+          title: "Voice Fill",
+          tabBarIcon: ({ color }) => <Mic color={color} />,
         }}
       />
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: "Dashboard",
-          tabBarIcon: ({ color }) => <Home color={color} />,
+          href: null,
         }}
       />
       <Tabs.Screen
         name="contract"
         options={{
-          title: "Contract",
-          tabBarIcon: ({ color }) => <FileCog color={color} />,
+          href: null,
         }}
       />
     </Tabs>
