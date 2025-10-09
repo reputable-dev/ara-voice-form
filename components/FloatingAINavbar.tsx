@@ -6,121 +6,177 @@ import {
   TouchableOpacity,
   Animated,
   Platform,
+  ScrollView,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MessageSquare, X } from 'lucide-react-native';
-import VoiceRecorder from './VoiceRecorder';
-import { ContractFormData } from '@/types/contract';
+import { 
+  Home, 
+  ClipboardList, 
+  Bot, 
+  Calendar, 
+  Users,
+  Paperclip,
+  Send,
+  Mic,
+  X 
+} from 'lucide-react-native';
 
 interface FloatingAINavbarProps {
   visible?: boolean;
-  contractData?: {
-    source: string;
-    formData: ContractFormData;
-    onFillAI: () => void;
-    onUpdateSource: (source: string) => void;
-  };
 }
 
-export default function FloatingAINavbar({ visible = true, contractData }: FloatingAINavbarProps) {
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+export default function FloatingAINavbar({ visible = true }: FloatingAINavbarProps) {
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
-  const [streamingText, setStreamingText] = useState<string>('');
+  const [inputText, setInputText] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('home');
   const insets = useSafeAreaInsets();
   
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const heightAnim = useRef(new Animated.Value(80)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(slideAnim, {
-        toValue: isExpanded ? 1 : 0,
-        useNativeDriver: true,
+      Animated.spring(heightAnim, {
+        toValue: isChatOpen ? 500 : 80,
+        useNativeDriver: false,
         tension: 50,
         friction: 8,
       }),
       Animated.timing(blurAnim, {
-        toValue: isExpanded ? 1 : 0,
+        toValue: isChatOpen ? 1 : 0,
         duration: 300,
         useNativeDriver: false,
       }),
     ]).start();
-  }, [isExpanded, slideAnim, blurAnim]);
+  }, [isChatOpen, heightAnim, blurAnim]);
 
   const handleToggle = () => {
-    setIsExpanded(!isExpanded);
+    setIsChatOpen(!isChatOpen);
   };
 
-  const handleTranscriptionStream = (text: string) => {
-    console.log('Streaming transcription:', text);
-    setStreamingText(text);
+  const handleCancel = () => {
+    setIsChatOpen(false);
+    setInputText('');
   };
 
-  const handleTranscription = (text: string) => {
-    console.log('Transcription received:', text);
-    setMessages(prev => [...prev, { role: 'user', text }]);
-    setStreamingText('');
-    
-    if (contractData) {
-      contractData.onUpdateSource(text);
+  const handleSendMessage = () => {
+    if (inputText.trim()) {
+      setMessages(prev => [...prev, { role: 'user', text: inputText }]);
+      setInputText('');
+      
       setTimeout(() => {
-        contractData.onFillAI();
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          text: "I've filled in the form with the information from your recording." 
+          text: "I'm here to help! How can I assist you today?" 
         }]);
       }, 500);
     }
   };
 
+
+
   if (!visible) return null;
 
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [600, 0],
-  });
+  const renderDefaultIcons = () => (
+    <>
+      <TouchableOpacity
+        style={[styles.navButton, activeTab === 'home' && styles.navButtonActive]}
+        onPress={() => setActiveTab('home')}
+        activeOpacity={0.8}
+      >
+        <Home color={activeTab === 'home' ? '#3B82F6' : '#6B7280'} size={24} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.navButton, activeTab === 'tasks' && styles.navButtonActive]}
+        onPress={() => setActiveTab('tasks')}
+        activeOpacity={0.8}
+      >
+        <ClipboardList color={activeTab === 'tasks' ? '#F59E0B' : '#6B7280'} size={24} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.navButton, styles.navButtonPrimary]}
+        onPress={handleToggle}
+        activeOpacity={0.8}
+      >
+        <Bot color="#10B981" size={28} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.navButton, activeTab === 'schedule' && styles.navButtonActive]}
+        onPress={() => setActiveTab('schedule')}
+        activeOpacity={0.8}
+      >
+        <Calendar color={activeTab === 'schedule' ? '#10B981' : '#6B7280'} size={24} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.navButton, activeTab === 'team' && styles.navButtonActive]}
+        onPress={() => setActiveTab('team')}
+        activeOpacity={0.8}
+      >
+        <Users color={activeTab === 'team' ? '#8B5CF6' : '#6B7280'} size={24} />
+      </TouchableOpacity>
+    </>
+  );
 
-  const navbarTranslateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 100],
-  });
+  const renderChatIcons = () => (
+    <>
+      <TouchableOpacity
+        style={styles.navButton}
+        onPress={() => setActiveTab('home')}
+        activeOpacity={0.8}
+      >
+        <Home color="#3B82F6" size={24} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.navButton}
+        activeOpacity={0.8}
+      >
+        <Paperclip color="#F59E0B" size={24} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.navButton, styles.sendButton]}
+        onPress={handleSendMessage}
+        activeOpacity={0.8}
+      >
+        <Send color="#10B981" size={20} />
+        <Text style={styles.sendText}>Send</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.navButton}
+        activeOpacity={0.8}
+      >
+        <Mic color="#F97316" size={24} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.navButton}
+        onPress={handleCancel}
+        activeOpacity={0.8}
+      >
+        <X color="#EF4444" size={24} />
+      </TouchableOpacity>
+    </>
+  );
 
   return (
     <>
-      {isExpanded && Platform.OS === 'web' && (
-        <Animated.View
-          style={[
-            styles.backdrop,
-            {
-              opacity: blurAnim,
-            },
-          ]}
-          pointerEvents={isExpanded ? 'auto' : 'none'}
-        >
-          <TouchableOpacity 
-            style={StyleSheet.absoluteFill} 
-            onPress={handleToggle}
-            activeOpacity={1}
-          />
-        </Animated.View>
-      )}
-
-      {isExpanded && Platform.OS !== 'web' && (
+      {isChatOpen && (
         <Animated.View
           style={[
             styles.backdrop,
             {
               opacity: blurAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [0, 0.3],
+                outputRange: [0, 0.5],
               }),
             },
           ]}
-          pointerEvents={isExpanded ? 'auto' : 'none'}
+          pointerEvents={isChatOpen ? 'auto' : 'none'}
         >
           <TouchableOpacity 
             style={StyleSheet.absoluteFill} 
-            onPress={handleToggle}
+            onPress={handleCancel}
             activeOpacity={1}
           />
         </Animated.View>
@@ -128,92 +184,77 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
 
       <Animated.View
         style={[
-          styles.navbar,
+          styles.navbarContainer,
           {
-            bottom: insets.bottom,
-            transform: [{ translateY: navbarTranslateY }],
+            bottom: insets.bottom + 16,
+            height: heightAnim,
           },
         ]}
       >
-        <TouchableOpacity
-          style={styles.navButton}
-          onPress={handleToggle}
-          activeOpacity={0.8}
-        >
-          <MessageSquare color="#10B981" size={28} />
-          <Text style={styles.navLabel}>ARA</Text>
-        </TouchableOpacity>
-      </Animated.View>
+        <View style={styles.navbar}>
+          {isChatOpen && (
+            <View style={styles.chatContent}>
+              <View style={styles.chatHeader}>
+                <View style={styles.chatHeaderLeft}>
+                  <Bot color="#10B981" size={24} />
+                  <Text style={styles.chatTitle}>AI Assistant</Text>
+                </View>
+              </View>
 
-      <Animated.View
-        style={[
-          styles.drawerContainer,
-          {
-            bottom: 0,
-            transform: [{ translateY }],
-          },
-        ]}
-        pointerEvents={isExpanded ? 'auto' : 'none'}
-      >
-        <View style={[styles.drawer, { paddingBottom: insets.bottom + 20 }]}>
-          <View style={styles.drawerHeader}>
-            <View style={styles.drawerHeaderLeft}>
-              <MessageSquare color="#10B981" size={24} />
-              <Text style={styles.drawerTitle}>ARA Assistant</Text>
+              <ScrollView 
+                style={styles.messagesScroll}
+                contentContainerStyle={styles.messagesContent}
+              >
+                {messages.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Bot color="#6B7280" size={48} />
+                    <Text style={styles.emptyStateTitle}>AI Assistant</Text>
+                    <Text style={styles.emptyStateText}>
+                      Type a message or use voice to interact with the assistant
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    {messages.map((msg, idx) => (
+                      <View
+                        key={idx}
+                        style={[
+                          styles.messageBubble,
+                          msg.role === 'user' ? styles.userBubble : styles.assistantBubble,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.messageText,
+                            msg.role === 'user' ? styles.userText : styles.assistantText,
+                          ]}
+                        >
+                          {msg.text}
+                        </Text>
+                      </View>
+                    ))}
+                  </>
+                )}
+              </ScrollView>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  ref={inputRef}
+                  style={styles.input}
+                  value={inputText}
+                  onChangeText={setInputText}
+                  placeholder="Type your message..."
+                  placeholderTextColor="#6B7280"
+                  multiline
+                  maxLength={500}
+                  onSubmitEditing={handleSendMessage}
+                />
+              </View>
             </View>
-            <TouchableOpacity onPress={handleToggle} style={styles.closeButton}>
-              <X color="#E5E7EB" size={24} />
-            </TouchableOpacity>
-          </View>
+          )}
 
-          <View style={styles.messagesContainer}>
-            {messages.length === 0 && !streamingText ? (
-              <View style={styles.emptyState}>
-                <MessageSquare color="#6B7280" size={48} />
-                <Text style={styles.emptyStateTitle}>Voice Fill Assistant</Text>
-                <Text style={styles.emptyStateText}>
-                  Tap the microphone to record your voice and automatically fill in the form
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.messagesList}>
-                {messages.map((msg, idx) => (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.messageBubble,
-                      msg.role === 'user' ? styles.userBubble : styles.assistantBubble,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.messageText,
-                        msg.role === 'user' ? styles.userText : styles.assistantText,
-                      ]}
-                    >
-                      {msg.text}
-                    </Text>
-                  </View>
-                ))}
-                {streamingText ? (
-                  <View style={[styles.messageBubble, styles.streamingBubble]}>
-                    <Text style={[styles.messageText, styles.streamingText]}>
-                      {streamingText}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            )}
-          </View>
-
-          <View style={styles.recorderContainer}>
-            <VoiceRecorder
-              onTranscriptionComplete={handleTranscription}
-              onTranscriptionStream={handleTranscriptionStream}
-              onRecordingStateChange={(recording) => {
-                console.log('Recording state:', recording);
-              }}
-            />
+          <View style={styles.navButtons}>
+            {isChatOpen ? renderChatIcons() : renderDefaultIcons()}
           </View>
         </View>
       </Animated.View>
@@ -227,44 +268,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     zIndex: 998,
   },
-  navbar: {
-    position: 'absolute',
+  navbarContainer: {
+    position: 'absolute' as const,
     left: 0,
     right: 0,
-    height: 80,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
     zIndex: 999,
-  },
-  navButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-  },
-  navLabel: {
-    color: '#10B981',
-    fontSize: 12,
-    fontWeight: '600' as const,
-  },
-  drawerContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: '70%',
-    zIndex: 1000,
-  },
-  drawer: {
-    flex: 1,
-    backgroundColor: '#000000',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 20,
     paddingHorizontal: 20,
+  },
+  navbar: {
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -277,31 +297,86 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  drawerHeader: {
+  chatContent: {
+    flex: 1,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+  },
+  chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
-    paddingBottom: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 12,
   },
-  drawerHeaderLeft: {
+  chatHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
-  drawerTitle: {
-    fontSize: 20,
+  chatTitle: {
+    fontSize: 18,
     fontWeight: '700' as const,
     color: '#E5E7EB',
   },
-  closeButton: {
-    padding: 4,
-  },
-  messagesContainer: {
+  messagesScroll: {
     flex: 1,
-    marginBottom: 20,
+    marginBottom: 12,
+  },
+  messagesContent: {
+    flexGrow: 1,
+    gap: 12,
+    paddingBottom: 8,
+  },
+  inputContainer: {
+    paddingBottom: 12,
+  },
+  input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 12,
+    color: '#E5E7EB',
+    fontSize: 15,
+    maxHeight: 100,
+  },
+  navButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    height: 70,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  navButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    borderRadius: 12,
+  },
+  navButtonActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  navButtonPrimary: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    padding: 12,
+  },
+  sendButton: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderRadius: 20,
+  },
+  sendText: {
+    color: '#10B981',
+    fontSize: 14,
+    fontWeight: '600' as const,
   },
   emptyState: {
     flex: 1,
@@ -309,6 +384,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
     paddingHorizontal: 40,
+    minHeight: 200,
   },
   emptyStateTitle: {
     fontSize: 18,
@@ -319,12 +395,8 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 14,
     color: '#9CA3AF',
-    textAlign: 'center',
+    textAlign: 'center' as const,
     lineHeight: 20,
-  },
-  messagesList: {
-    flex: 1,
-    gap: 12,
   },
   messageBubble: {
     maxWidth: '80%',
@@ -358,8 +430,5 @@ const styles = StyleSheet.create({
   streamingText: {
     color: '#D1FAE5',
     fontStyle: 'italic' as const,
-  },
-  recorderContainer: {
-    paddingVertical: 10,
   },
 });
