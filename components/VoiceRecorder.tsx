@@ -195,7 +195,18 @@ export default function VoiceRecorder({
         throw new Error(`Transcription failed: ${sttResponse.status}`);
       }
 
-      const data = await sttResponse.json();
+      const responseText = await sttResponse.text();
+      console.log('STT API response:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        console.error('Response text:', responseText);
+        throw new Error('Invalid response from transcription service');
+      }
+
       console.log('Transcription result:', data);
 
       if (data.text) {
