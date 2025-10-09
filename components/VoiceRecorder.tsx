@@ -78,6 +78,16 @@ export default function VoiceRecorder({
 
   const startRecording = async () => {
     try {
+      if (recording) {
+        console.log('Cleaning up existing recording...');
+        try {
+          await recording.stopAndUnloadAsync();
+        } catch (e) {
+          console.log('Error cleaning up existing recording:', e);
+        }
+        setRecording(null);
+      }
+
       if (permissionResponse?.status !== 'granted') {
         console.log('Requesting permission..');
         const permission = await requestPermission();
