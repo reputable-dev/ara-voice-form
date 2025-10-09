@@ -272,7 +272,7 @@ export default function VoiceFillScreen() {
             <View style={styles.tipRow}>
               <Info color="#9CA3AF" />
               <Text style={styles.tipText}>
-                Try saying: &quot;My name is John Doe, email john@example.com, phone 555-1234, I live at 123 Main Street, and I work as a software engineer.&quot;
+                Try saying: "My name is John Doe, email john@example.com, phone 555-1234, I live at 123 Main Street, and I work as a software engineer."
               </Text>
             </View>
           </Card>
