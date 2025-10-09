@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, Modal } from "react-native";
 import { Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
@@ -144,26 +144,7 @@ export default function VoiceFillScreen() {
             </Text>
           </Card>
 
-          {showRecorder ? (
-            <Card style={styles.recorderCard}>
-              <VoiceRecorder 
-                onTranscriptionComplete={handleTranscription}
-                onRecordingStateChange={(recording) => {
-                  if (!recording && Platform.OS !== 'web') {
-                    console.log('Recording stopped');
-                  }
-                }}
-              />
-              <TouchableOpacity 
-                onPress={() => setShowRecorder(false)} 
-                style={styles.cancelButton}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </Card>
-          ) : (
-            <>
-              <Card style={styles.formCard}>
+          <Card style={styles.formCard}>
                 <View style={styles.formHeader}>
                   <View style={styles.headerRowLeft}>
                     <User color="#A7F3D0" />
@@ -286,8 +267,6 @@ export default function VoiceFillScreen() {
                   <Text style={styles.transcriptionText}>{transcribedText}</Text>
                 </Card>
               )}
-            </>
-          )}
 
           <Card>
             <View style={styles.tipRow}>
@@ -298,6 +277,37 @@ export default function VoiceFillScreen() {
             </View>
           </Card>
         </ScrollView>
+
+        <Modal
+          visible={showRecorder}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowRecorder(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity 
+              style={styles.modalBackdrop} 
+              activeOpacity={1}
+              onPress={() => setShowRecorder(false)}
+            />
+            <View style={styles.recorderModal}>
+              <VoiceRecorder 
+                onTranscriptionComplete={handleTranscription}
+                onRecordingStateChange={(recording) => {
+                  if (!recording && Platform.OS !== 'web') {
+                    console.log('Recording stopped');
+                  }
+                }}
+              />
+              <TouchableOpacity 
+                onPress={() => setShowRecorder(false)} 
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </>
     </ErrorBoundary>
   );
@@ -337,11 +347,38 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: "#A7F3D0", fontStyle: "italic" as const, fontSize: 13 },
   subtleCenter: { color: "#D1D5DB", opacity: 0.85, fontSize: 14, lineHeight: 20 },
-  recorderCard: {
-    backgroundColor: "rgba(0,0,0,0.50)",
-    borderRadius: 24,
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  recorderModal: {
+    backgroundColor: "rgba(0,0,0,0.95)",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 16,
+      },
+    }),
   },
   formCard: {
     gap: 16,
