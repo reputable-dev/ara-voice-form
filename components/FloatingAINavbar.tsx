@@ -22,11 +22,19 @@ import {
   X 
 } from 'lucide-react-native';
 
-interface FloatingAINavbarProps {
-  visible?: boolean;
+interface ContractData {
+  source: string;
+  formData: any;
+  onFillAI: () => void;
+  onUpdateSource: (source: string) => void;
 }
 
-export default function FloatingAINavbar({ visible = true }: FloatingAINavbarProps) {
+interface FloatingAINavbarProps {
+  visible?: boolean;
+  contractData?: ContractData;
+}
+
+export default function FloatingAINavbar({ visible = true, contractData }: FloatingAINavbarProps) {
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
   const [inputText, setInputText] = useState<string>('');
@@ -214,26 +222,24 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
                     </Text>
                   </View>
                 ) : (
-                  <>
-                    {messages.map((msg, idx) => (
-                      <View
-                        key={idx}
+                  messages.map((msg, idx) => (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.messageBubble,
+                        msg.role === 'user' ? styles.userBubble : styles.assistantBubble,
+                      ]}
+                    >
+                      <Text
                         style={[
-                          styles.messageBubble,
-                          msg.role === 'user' ? styles.userBubble : styles.assistantBubble,
+                          styles.messageText,
+                          msg.role === 'user' ? styles.userText : styles.assistantText,
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.messageText,
-                            msg.role === 'user' ? styles.userText : styles.assistantText,
-                          ]}
-                        >
-                          {msg.text}
-                        </Text>
-                      </View>
-                    ))}
-                  </>
+                        {msg.text}
+                      </Text>
+                    </View>
+                  ))
                 )}
               </ScrollView>
 
