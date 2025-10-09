@@ -25,6 +25,7 @@ interface FloatingAINavbarProps {
 export default function FloatingAINavbar({ visible = true, contractData }: FloatingAINavbarProps) {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
+  const [streamingText, setStreamingText] = useState<string>('');
   const insets = useSafeAreaInsets();
   
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -50,9 +51,15 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
     setIsExpanded(!isExpanded);
   };
 
+  const handleTranscriptionStream = (text: string) => {
+    console.log('Streaming transcription:', text);
+    setStreamingText(text);
+  };
+
   const handleTranscription = (text: string) => {
     console.log('Transcription received:', text);
     setMessages(prev => [...prev, { role: 'user', text }]);
+    setStreamingText('');
     
     if (contractData) {
       contractData.onUpdateSource(text);
@@ -160,7 +167,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
           </View>
 
           <View style={styles.messagesContainer}>
-            {messages.length === 0 ? (
+            {messages.length === 0 && !streamingText ? (
               <View style={styles.emptyState}>
                 <MessageSquare color="#6B7280" size={48} />
                 <Text style={styles.emptyStateTitle}>Voice Fill Assistant</Text>
@@ -188,6 +195,13 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                     </Text>
                   </View>
                 ))}
+                {streamingText ? (
+                  <View style={[styles.messageBubble, styles.streamingBubble]}>
+                    <Text style={[styles.messageText, styles.streamingText]}>
+                      {streamingText}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             )}
           </View>
@@ -195,6 +209,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
           <View style={styles.recorderContainer}>
             <VoiceRecorder
               onTranscriptionComplete={handleTranscription}
+              onTranscriptionStream={handleTranscriptionStream}
               onRecordingStateChange={(recording) => {
                 console.log('Recording state:', recording);
               }}
@@ -333,6 +348,16 @@ const styles = StyleSheet.create({
   },
   assistantText: {
     color: '#E5E7EB',
+  },
+  streamingBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: 'rgba(16, 185, 129, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.5)',
+  },
+  streamingText: {
+    color: '#D1FAE5',
+    fontStyle: 'italic' as const,
   },
   recorderContainer: {
     paddingVertical: 10,

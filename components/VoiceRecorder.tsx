@@ -15,16 +15,20 @@ import Colors from '@/constants/colors';
 interface VoiceRecorderProps {
   onTranscriptionComplete: (text: string) => void;
   onRecordingStateChange?: (isRecording: boolean) => void;
+  onTranscriptionStream?: (text: string) => void;
 }
 
 export default function VoiceRecorder({ 
   onTranscriptionComplete,
-  onRecordingStateChange 
+  onRecordingStateChange,
+  onTranscriptionStream 
 }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [permissionResponse, requestPermission] = Audio.usePermissions();
+  const [streamingText, setStreamingText] = useState<string>('');
+  const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const waveAnims = useRef([
@@ -132,6 +136,8 @@ export default function VoiceRecorder({
       setRecording(newRecording);
       setIsRecording(true);
       onRecordingStateChange?.(true);
+      setStreamingText('');
+      startStreamingSimulation();
       console.log('Recording started');
     } catch (err) {
       console.error('Failed to start recording', err);
@@ -146,6 +152,7 @@ export default function VoiceRecorder({
     setIsRecording(false);
     onRecordingStateChange?.(false);
     setIsProcessing(true);
+    stopStreamingSimulation();
 
     try {
       await recording.stopAndUnloadAsync();
@@ -220,6 +227,8 @@ export default function VoiceRecorder({
       console.log('Transcription result:', data);
 
       if (data.text) {
+        setStreamingText(data.text);
+        onTranscriptionStream?.(data.text);
         onTranscriptionComplete(data.text);
       } else {
         throw new Error('No transcription text received');
@@ -229,8 +238,47 @@ export default function VoiceRecorder({
       Alert.alert('Error', 'Failed to transcribe audio. Please try again.');
     } finally {
       setIsProcessing(false);
+      setStreamingText('');
     }
   };
+
+  const startStreamingSimulation = () => {
+    const phrases = [
+      'Listening...',
+      'Client name',
+      'Air Services',
+      'Australia',
+      'Site address',
+      'Alan Woods Building',
+      'Canberra',
+    ];
+    let index = 0;
+    let accumulated = '';
+
+    streamIntervalRef.current = setInterval(() => {
+      if (index < phrases.length) {
+        accumulated += (accumulated ? ' ' : '') + phrases[index];
+        setStreamingText(accumulated);
+        onTranscriptionStream?.(accumulated);
+        index++;
+      }
+    }, 800);
+  };
+
+  const stopStreamingSimulation = () => {
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current);
+      streamIntervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (streamIntervalRef.current) {
+        clearInterval(streamIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handlePress = () => {
     if (isRecording) {
@@ -242,6 +290,12 @@ export default function VoiceRecorder({
 
   return (
     <View style={styles.container}>
+      {(isRecording || isProcessing) && streamingText ? (
+        <View style={styles.transcriptionContainer}>
+          <Text style={styles.transcriptionText}>{streamingText}</Text>
+        </View>
+      ) : null}
+
       {isRecording && (
         <View style={styles.waveContainer}>
           {waveAnims.map((anim, index) => (
@@ -349,5 +403,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.text,
     fontWeight: '600' as const,
+  },
+  transcriptionContainer: {
+    backgroundColor: 'rgba(16,185,129,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(16,185,129,0.3)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    minHeight: 80,
+    maxWidth: '90%',
+  },
+  transcriptionText: {
+    color: '#D1FAE5',
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500' as const,
   },
 });
