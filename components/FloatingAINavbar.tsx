@@ -60,7 +60,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         contractData.onFillAI();
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          text: 'I\'ve filled in the form with the information from your recording.' 
+          text: "I've filled in the form with the information from your recording." 
         }]);
       }, 500);
     }
