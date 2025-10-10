@@ -16,7 +16,6 @@ import {
   Bot, 
   Calendar, 
   Users,
-  Paperclip,
   Send,
   Mic,
   X 
@@ -136,12 +135,6 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         activeOpacity={0.8}
       >
         <Home color="#3B82F6" size={24} />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.navButton}
-        activeOpacity={0.8}
-      >
-        <Paperclip color="#F59E0B" size={24} />
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.navButton, styles.sendButton]}
