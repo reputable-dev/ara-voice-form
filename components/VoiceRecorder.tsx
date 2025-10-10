@@ -8,7 +8,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { Audio } from 'expo-av';
+import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { Mic, Square, Loader } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 
@@ -25,10 +25,9 @@ export default function VoiceRecorder({
 }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [permissionResponse, requestPermission] = Audio.usePermissions();
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [streamingText, setStreamingText] = useState<string>('');
-  const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const waveAnims = useRef([
@@ -78,62 +77,19 @@ export default function VoiceRecorder({
       pulseAnim.setValue(1);
       waveAnims.forEach(anim => anim.setValue(0.3));
     }
-  }, [isRecording]);
+  }, [isRecording, pulseAnim, waveAnims]);
 
   const startRecording = async () => {
     try {
-      if (recording) {
-        console.log('Cleaning up existing recording...');
-        try {
-          await recording.stopAndUnloadAsync();
-        } catch (e) {
-          console.log('Error cleaning up existing recording:', e);
-        }
-        setRecording(null);
+      const permission = await AudioModule.requestRecordingPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission Required', 'Microphone permission is required to record audio.');
+        return;
       }
-
-      if (permissionResponse?.status !== 'granted') {
-        console.log('Requesting permission..');
-        const permission = await requestPermission();
-        if (!permission.granted) {
-          Alert.alert('Permission Required', 'Microphone permission is required to record audio.');
-          return;
-        }
-      }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
 
       console.log('Starting recording..');
-      const { recording: newRecording } = await Audio.Recording.createAsync({
-        android: {
-          extension: '.m4a',
-          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-          audioEncoder: Audio.AndroidAudioEncoder.AAC,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: '.wav',
-          outputFormat: Audio.IOSOutputFormat.LINEARPCM,
-          audioQuality: Audio.IOSAudioQuality.HIGH,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: {
-          mimeType: 'audio/webm',
-          bitsPerSecond: 128000,
-        },
-      });
+      await audioRecorder.record();
 
-      setRecording(newRecording);
       setIsRecording(true);
       onRecordingStateChange?.(true);
       setStreamingText('');
@@ -146,7 +102,7 @@ export default function VoiceRecorder({
   };
 
   const stopRecording = async () => {
-    if (!recording) return;
+    if (!isRecording) return;
 
     console.log('Stopping recording..');
     setIsRecording(false);
@@ -155,22 +111,13 @@ export default function VoiceRecorder({
     stopStreamingSimulation();
 
     try {
-      await recording.stopAndUnloadAsync();
-      
-      if (Platform.OS !== 'web') {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-        });
-      }
-
-      const uri = recording.getURI();
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri;
       console.log('Recording stopped and stored at', uri);
 
       if (uri) {
         await transcribeAudio(uri);
       }
-
-      setRecording(null);
     } catch (error) {
       console.error('Failed to stop recording', error);
       Alert.alert('Error', 'Failed to process recording.');
