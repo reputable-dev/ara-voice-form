@@ -190,26 +190,8 @@ export default function VoiceRecorder({
   };
 
   const startStreamingSimulation = () => {
-    const phrases = [
-      'Listening...',
-      'Client name',
-      'Air Services',
-      'Australia',
-      'Site address',
-      'Alan Woods Building',
-      'Canberra',
-    ];
-    let index = 0;
-    let accumulated = '';
-
-    streamIntervalRef.current = setInterval(() => {
-      if (index < phrases.length) {
-        accumulated += (accumulated ? ' ' : '') + phrases[index];
-        setStreamingText(accumulated);
-        onTranscriptionStream?.(accumulated);
-        index++;
-      }
-    }, 800);
+    setStreamingText('Listening...');
+    onTranscriptionStream?.('Listening...');
   };
 
   const stopStreamingSimulation = () => {
