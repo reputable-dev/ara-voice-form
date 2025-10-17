@@ -175,12 +175,17 @@ export default function VoiceRecorder({
       }
 
       console.log('Transcription result:', data);
+      console.log('Full data object:', JSON.stringify(data, null, 2));
 
-      if (data.text) {
+      if (data.text && data.text.trim()) {
         setStreamingText(data.text);
         onTranscriptionStream?.(data.text);
         onTranscriptionComplete(data.text);
+      } else if (data.text === '') {
+        console.warn('Received empty transcription text');
+        Alert.alert('No Speech Detected', 'No speech was detected in the recording. Please try again.');
       } else {
+        console.error('No text field in response. Keys:', Object.keys(data));
         throw new Error('No transcription text received');
       }
     } catch (error) {
