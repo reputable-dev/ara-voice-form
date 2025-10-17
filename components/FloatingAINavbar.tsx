@@ -296,8 +296,10 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
         onPress={handleSendMessage}
         activeOpacity={0.7}
       >
-        <Send color="#10B981" size={18} />
-        <Text style={styles.sendText}>Send</Text>
+        <View style={styles.sendButtonContent}>
+          <Send color="#10B981" size={18} />
+          <Text style={styles.sendText}>Send</Text>
+        </View>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.iconButton, isRecording && styles.recordingButton]}
@@ -530,14 +532,17 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   sendButton: {
-    flexDirection: 'row',
-    gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
     backgroundColor: 'rgba(16, 185, 129, 0.2)',
     borderRadius: 20,
     width: 'auto',
     height: 'auto',
+  },
+  sendButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   cancelButton: {
     backgroundColor: 'rgba(239, 68, 68, 0.2)',
