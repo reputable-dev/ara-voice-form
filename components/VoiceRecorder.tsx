@@ -87,7 +87,10 @@ export default function VoiceRecorder({
         return;
       }
 
-      console.log('Starting recording..');
+      console.log('Preparing to record...');
+      await audioRecorder.prepareToRecordAsync();
+      
+      console.log('Starting recording...');
       await audioRecorder.record();
 
       setIsRecording(true);
