@@ -227,11 +227,11 @@ export default function VoiceRecorder({
 
   return (
     <View style={styles.container}>
-      {(isRecording || isProcessing) && streamingText ? (
+      {(isRecording || isProcessing) && streamingText && (
         <View style={styles.transcriptionContainer}>
           <Text style={styles.transcriptionText}>{streamingText}</Text>
         </View>
-      ) : null}
+      )}
 
       {isRecording && (
         <View style={styles.waveContainer}>

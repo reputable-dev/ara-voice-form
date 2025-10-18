@@ -44,7 +44,6 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
   const [activeTab, setActiveTab] = useState<string>('home');
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [streamingText, setStreamingText] = useState<string>('');
   const insets = useSafeAreaInsets();
   
   const heightAnim = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
@@ -129,7 +128,6 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
       console.log('Starting recording...');
       await audioRecorder.record();
       setIsRecording(true);
-      setStreamingText('');
       console.log('Recording started');
     } catch (err) {
       console.error('Failed to start recording', err);
@@ -198,7 +196,6 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
 
       if (data.text) {
         setMessages(prev => [...prev, { role: 'user', content: data.text }]);
-        setStreamingText('');
         
         setTimeout(() => {
           scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -383,9 +380,7 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
                 {(isRecording || isProcessing) && (
                   <View style={styles.streamingContainer}>
                     <View style={styles.streamingIndicator}>
-                      {isRecording && (
-                        <View style={styles.recordingDot} />
-                      )}
+                      {isRecording && <View style={styles.recordingDot} />}
                       <Text style={styles.streamingText}>
                         {isProcessing ? 'Processing...' : 'Recording...'}
                       </Text>
