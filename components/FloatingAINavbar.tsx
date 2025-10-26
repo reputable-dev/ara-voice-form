@@ -125,6 +125,9 @@ export default function FloatingAINavbar({ visible = true }: FloatingAINavbarPro
         return;
       }
 
+      console.log('Preparing to record...');
+      await audioRecorder.prepareToRecordAsync();
+      
       console.log('Starting recording...');
       await audioRecorder.record();
       setIsRecording(true);
