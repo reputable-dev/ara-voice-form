@@ -87,6 +87,10 @@ export default function VoiceRecorder({
         return;
       }
 
+      if (Platform.OS === 'ios') {
+        await AudioModule.setAudioModeAsync({ allowsRecording: true });
+      }
+
       console.log('Preparing to record...');
       await audioRecorder.prepareToRecordAsync();
       
