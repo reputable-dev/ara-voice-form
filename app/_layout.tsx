@@ -6,6 +6,7 @@ import { StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import FloatingAINavbar from "@/components/FloatingAINavbar";
+import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,13 +33,15 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={styles.gestureHandler}>
-          <RootLayoutNav />
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <GestureHandlerRootView style={styles.gestureHandler}>
+            <RootLayoutNav />
+          </GestureHandlerRootView>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </trpc.Provider>
   );
 }
 
