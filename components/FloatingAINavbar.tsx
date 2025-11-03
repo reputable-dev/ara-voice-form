@@ -26,16 +26,25 @@ import {
   Loader,
 } from 'lucide-react-native';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
+import { ContractFormData } from '@/types/contract';
+
+interface ContractData {
+  source: string;
+  formData: ContractFormData;
+  onFillAI: () => void;
+  onUpdateSource: (newSource: string) => void;
+}
 
 interface FloatingAINavbarProps {
   visible?: boolean;
+  contractData?: ContractData;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const COLLAPSED_HEIGHT = 70;
 const EXPANDED_HEIGHT = SCREEN_HEIGHT * 0.5;
 
-export default function FloatingAINavbar({ visible = true }: FloatingAINavbarProps) {
+export default function FloatingAINavbar({ visible = true, contractData }: FloatingAINavbarProps) {
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([
     { role: 'assistant', content: 'Hello! How can I assist you today?' }
