@@ -128,11 +128,12 @@ export default function VoiceFillScreen() {
             headerRight,
           }}
         />
-        <ScrollView 
-          style={styles.container} 
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]} 
-          testID="voiceFillScroll"
-        >
+        <View style={[styles.backgroundWrapper, { paddingTop: insets.top }]}>
+          <ScrollView 
+            style={styles.container} 
+            contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]} 
+            testID="voiceFillScroll"
+          >
           <Card style={styles.hero}>
             <Text style={styles.h1}>Voice Fill</Text>
             <View style={styles.badge}>
@@ -276,7 +277,8 @@ export default function VoiceFillScreen() {
               </Text>
             </View>
           </Card>
-        </ScrollView>
+          </ScrollView>
+        </View>
 
         <Modal
           visible={showRecorder}
@@ -314,9 +316,12 @@ export default function VoiceFillScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  backgroundWrapper: {
+    flex: 1,
     backgroundColor: '#1a1a1a',
+  },
+  container: { 
+    flex: 1,
   },
   content: { padding: 16, gap: 12 },
   hero: { 

@@ -127,12 +127,13 @@ export default function DashboardScreen() {
             ),
           }}
         />
-        <ScrollView 
-          style={styles.container} 
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
-          showsVerticalScrollIndicator={false}
-          testID="dashboardScroll"
-        >
+        <View style={[styles.backgroundWrapper, { paddingTop: insets.top }]}>
+          <ScrollView 
+            style={styles.container} 
+            contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
+            showsVerticalScrollIndicator={false}
+            testID="dashboardScroll"
+          >
         {/* Header */}
         <Card style={styles.header}>
           <View style={styles.userInfo}>
@@ -257,16 +258,20 @@ export default function DashboardScreen() {
             />
           </View>
         </Card>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </>
     </ErrorBoundary>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  backgroundWrapper: {
     flex: 1,
     backgroundColor: '#1a1a1a',
+  },
+  container: {
+    flex: 1,
   },
   content: {
     padding: 16,

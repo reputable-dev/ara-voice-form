@@ -78,13 +78,15 @@ export default function ContractScreen() {
     <ErrorBoundary>
       <>
         <Stack.Screen options={{ title: "Contract Adjustment", headerRight }} />
-        <ScrollView 
-          style={styles.container} 
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} 
-          testID="contractScroll"
-        >
-          <View style={styles.grid}>
-            <Card style={styles.panel}>
+        <View style={[styles.backgroundWrapper, { paddingTop: insets.top }]}>
+          <ScrollView 
+            style={styles.container} 
+            contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} 
+            testID="contractScroll"
+          >
+            <View style={styles.grid}>
+              <Card style={styles.panel}>
+
               <View style={styles.panelHeader}>
                 <View style={styles.headerLeft}>
                   <FileText color="#A7F3D0" />
@@ -476,7 +478,8 @@ export default function ContractScreen() {
               </View>
             </Card>
           </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
         
         <FloatingAINavbar 
           contractData={{
@@ -492,7 +495,11 @@ export default function ContractScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a1a' },
+  backgroundWrapper: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+  },
+  container: { flex: 1 },
   content: { padding: 16, gap: 12 },
   grid: { gap: 12 },
   panel: { gap: 12 },
