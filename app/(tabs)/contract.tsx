@@ -2,12 +2,10 @@ import React, { useCallback, useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from "react-native";
 import { Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/constants/colors";
 import Card from "@/components/Card";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import InputField from "@/components/InputField";
 import TagToggle from "@/components/TagToggle";
-import FloatingAINavbar from "@/components/FloatingAINavbar";
 import { BadgeCheck, FileText, RotateCcw, IdCard, Briefcase } from "lucide-react-native";
 import { ContractFormData } from "@/types/contract";
 import { applyParsedToState, initialContractData, parseContractSource } from "@/utils/contractParser";
@@ -480,15 +478,6 @@ export default function ContractScreen() {
           </View>
           </ScrollView>
         </View>
-        
-        <FloatingAINavbar 
-          contractData={{
-            source,
-            formData: data,
-            onFillAI,
-            onUpdateSource,
-          }}
-        />
       </>
     </ErrorBoundary>
   );
