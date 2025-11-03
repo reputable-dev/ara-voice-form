@@ -494,7 +494,6 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     paddingBottom: 16,
-    gap: 12,
   },
   inputContainer: {
     paddingTop: 12,
@@ -562,6 +561,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 16,
+    marginBottom: 12,
   },
   userBubble: {
     alignSelf: 'flex-end',
@@ -593,6 +593,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.3)',
+    marginBottom: 12,
   },
   streamingIndicator: {
     flexDirection: 'row',
