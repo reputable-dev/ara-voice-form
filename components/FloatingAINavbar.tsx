@@ -33,6 +33,7 @@ interface ContractData {
   formData: ContractFormData;
   onFillAI: () => void;
   onUpdateSource: (newSource: string) => void;
+  onVoiceFillComplete?: (transcription: string) => void;
 }
 
 interface FloatingAINavbarProps {
@@ -53,6 +54,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
   const [activeTab, setActiveTab] = useState<string>('home');
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isVoiceFillMode, setIsVoiceFillMode] = useState<boolean>(false);
   const insets = useSafeAreaInsets();
   
   const heightAnim = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
@@ -207,21 +209,27 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       console.log('Transcription result:', data);
 
       if (data.text) {
-        setMessages(prev => [...prev, { role: 'user', content: data.text }]);
-        
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-        
-        setTimeout(() => {
-          setMessages(prev => [...prev, { 
-            role: 'assistant', 
-            content: "I've received your message. How can I help you with that?" 
-          }]);
+        if (isVoiceFillMode && contractData?.onVoiceFillComplete) {
+          contractData.onVoiceFillComplete(data.text);
+          setIsVoiceFillMode(false);
+          Alert.alert('Success', 'Voice transcription completed. AI is filling the form.');
+        } else {
+          setMessages(prev => [...prev, { role: 'user', content: data.text }]);
+          
           setTimeout(() => {
             scrollViewRef.current?.scrollToEnd({ animated: true });
           }, 100);
-        }, 1000);
+          
+          setTimeout(() => {
+            setMessages(prev => [...prev, { 
+              role: 'assistant', 
+              content: "I've received your message. How can I help you with that?" 
+            }]);
+            setTimeout(() => {
+              scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }, 1000);
+        }
       } else {
         throw new Error('No transcription text received');
       }
@@ -237,6 +245,18 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
     if (isRecording) {
       stopRecording();
     } else {
+      startRecording();
+    }
+  };
+
+  const handleVoiceFillToggle = () => {
+    if (isVoiceFillMode) {
+      if (isRecording) {
+        stopRecording();
+      }
+      setIsVoiceFillMode(false);
+    } else {
+      setIsVoiceFillMode(true);
       startRecording();
     }
   };
@@ -262,11 +282,24 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         <ClipboardList color="#F59E0B" size={22} />
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.iconButton, styles.botButton]}
-        onPress={handleToggle}
+        style={[
+          styles.iconButton, 
+          styles.botButton,
+          isVoiceFillMode && styles.voiceFillActive
+        ]}
+        onPress={handleVoiceFillToggle}
+        disabled={isProcessing}
         activeOpacity={0.7}
       >
-        <Bot color="#10B981" size={24} />
+        <Animated.View style={{ transform: [{ scale: isVoiceFillMode && isRecording ? pulseAnim : 1 }] }}>
+          {isProcessing ? (
+            <Loader color="#10B981" size={24} />
+          ) : isVoiceFillMode && isRecording ? (
+            <Square color="#EF4444" size={24} fill="#EF4444" />
+          ) : (
+            <Mic color={isVoiceFillMode ? "#EF4444" : "#10B981"} size={24} />
+          )}
+        </Animated.View>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.iconButton, activeTab === 'schedule' && styles.iconButtonActive]}
@@ -536,6 +569,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+  },
+  voiceFillActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
   },
   sendButton: {
     paddingHorizontal: 16,

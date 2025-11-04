@@ -6,6 +6,7 @@ import Card from "@/components/Card";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import InputField from "@/components/InputField";
 import TagToggle from "@/components/TagToggle";
+import FloatingAINavbar from "@/components/FloatingAINavbar";
 import { BadgeCheck, FileText, RotateCcw, IdCard, Briefcase } from "lucide-react-native";
 import { ContractFormData } from "@/types/contract";
 import { applyParsedToState, initialContractData, parseContractSource } from "@/utils/contractParser";
@@ -36,6 +37,24 @@ export default function ContractScreen() {
   const onUpdateSource = useCallback((newSource: string) => {
     setSource(newSource);
   }, []);
+
+  const handleVoiceFillComplete = useCallback((transcription: string) => {
+    console.log('Voice transcription received:', transcription);
+    setSource(transcription);
+    
+    try {
+      const parsed = parseContractSource(transcription);
+      const next = applyParsedToState(data, parsed);
+      if (parsed.summaryLines.length && !next.summary) {
+        next.summary = parsed.summaryLines.join("\n");
+      }
+      setData(next);
+      setAiFilled(true);
+    } catch (e) {
+      console.log('Voice fill error', e);
+      Alert.alert('Error', 'Failed to parse voice input. Please try again.');
+    }
+  }, [data]);
 
   const onReset = useCallback(() => {
     setData(initialContractData());
@@ -76,6 +95,16 @@ export default function ContractScreen() {
     <ErrorBoundary>
       <>
         <Stack.Screen options={{ title: "Contract Adjustment", headerRight }} />
+        <FloatingAINavbar
+          visible={true}
+          contractData={{
+            source,
+            formData: data,
+            onFillAI,
+            onUpdateSource,
+            onVoiceFillComplete: handleVoiceFillComplete,
+          }}
+        />
         <View style={[styles.backgroundWrapper, { paddingTop: insets.top }]}>
           <ScrollView 
             style={styles.container} 
