@@ -422,16 +422,16 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                     </Text>
                   </View>
                 ))}
-                {(isRecording || isProcessing) ? (
+                {(isRecording || isProcessing) && (
                   <View style={styles.streamingContainer}>
                     <View style={styles.streamingIndicator}>
-                      {isRecording ? <View style={styles.recordingDot} /> : null}
+                      {isRecording && <View style={styles.recordingDot} />}
                       <Text style={styles.streamingText}>
                         {isProcessing ? 'Processing...' : 'Recording...'}
                       </Text>
                     </View>
                   </View>
-                ) : null}
+                )}
               </ScrollView>
 
               <View style={styles.inputContainer}>
