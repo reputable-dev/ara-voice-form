@@ -338,13 +338,13 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
 
   return (
     <>
-      {isChatOpen && (
+      {isChatOpen ? (
         <TouchableOpacity 
           style={styles.backdrop}
           activeOpacity={1}
           onPress={handleCancel}
         />
-      )}
+      ) : null}
 
       <Animated.View
         style={[
@@ -356,7 +356,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         ]}
       >
         <View style={styles.navbar}>
-          {isChatOpen && (
+          {isChatOpen ? (
             <View style={styles.chatContainer}>
               <View style={styles.chatHeader}>
                 <View style={styles.chatHeaderLeft}>
@@ -389,16 +389,16 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                     </Text>
                   </View>
                 ))}
-                {(isRecording || isProcessing) && (
+                {(isRecording || isProcessing) ? (
                   <View style={styles.streamingContainer}>
                     <View style={styles.streamingIndicator}>
-                      {isRecording && <View style={styles.recordingDot} />}
+                      {isRecording ? <View style={styles.recordingDot} /> : null}
                       <Text style={styles.streamingText}>
                         {isProcessing ? 'Processing...' : 'Recording...'}
                       </Text>
                     </View>
                   </View>
-                )}
+                ) : null}
               </ScrollView>
 
               <View style={styles.inputContainer}>
@@ -417,7 +417,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
                 />
               </View>
             </View>
-          )}
+          ) : null}
 
           <View style={styles.navButtons}>
             {isChatOpen ? renderChatIcons() : renderDefaultIcons()}
