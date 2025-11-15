@@ -259,21 +259,45 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         throw new Error(`Transcription failed: ${sttResponse.status}`);
       }
 
-      const data = await sttResponse.json();
-      console.log('Transcription result:', data);
+      const responseText = await sttResponse.text();
+      console.log('STT API response:', responseText);
 
-      if (data.text) {
-        setTranscriptionText(data.text);
-        
-        if (contractData?.onVoiceFillComplete) {
-          contractData.onVoiceFillComplete(data.text);
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        console.error('Response text:', responseText);
+        throw new Error('Invalid response from transcription service');
+      }
+
+      console.log('Transcription result:', data);
+      console.log('Full data object:', JSON.stringify(data, null, 2));
+      console.log('Data keys:', Object.keys(data));
+      console.log('Text field type:', typeof data.text);
+      console.log('Text field value:', data.text);
+
+      if (data && data.text !== undefined) {
+        if (data.text.trim() === '') {
+          console.warn('Received empty transcription text');
+          Alert.alert('No Speech Detected', 'No speech was detected in the recording. Please try speaking louder or closer to the microphone.');
+          setTranscriptionText('');
+          setIsVoiceUIVisible(false);
+        } else {
+          setTranscriptionText(data.text);
           
-          setTimeout(() => {
-            setTranscriptionText('');
-            setIsVoiceUIVisible(false);
-          }, 2000);
+          if (contractData?.onVoiceFillComplete) {
+            contractData.onVoiceFillComplete(data.text);
+            
+            setTimeout(() => {
+              setTranscriptionText('');
+              setIsVoiceUIVisible(false);
+            }, 2000);
+          }
         }
       } else {
+        console.error('No text field in response. Keys:', Object.keys(data));
+        console.error('Entire response:', JSON.stringify(data, null, 2));
         throw new Error('No transcription text received');
       }
     } catch (error) {
