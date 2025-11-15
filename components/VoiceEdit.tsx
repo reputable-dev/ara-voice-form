@@ -168,10 +168,27 @@ export default function VoiceEdit({
         throw new Error(`Transcription failed: ${sttResponse.status}`);
       }
 
-      const data = await sttResponse.json();
-      console.log('VoiceEdit: Transcription result:', data);
+      const responseText = await sttResponse.text();
+      console.log('VoiceEdit: Raw response:', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('VoiceEdit: Failed to parse JSON:', parseError);
+        throw new Error('Invalid response from transcription service');
+      }
+      
+      console.log('VoiceEdit: Parsed data:', JSON.stringify(data, null, 2));
+      console.log('VoiceEdit: Data keys:', Object.keys(data));
 
-      if (data.text) {
+      if (data && data.text !== undefined) {
+        if (data.text.trim() === '') {
+          Alert.alert('No Speech', 'No speech detected. Please try again.');
+          handleCancel();
+          return;
+        }
+        
         setTranscriptionText(data.text);
         
         setTranscriptionText('Applying edit...');
@@ -185,6 +202,7 @@ export default function VoiceEdit({
         await new Promise(resolve => setTimeout(resolve, 1000));
         handleCancel();
       } else {
+        console.error('VoiceEdit: No text field in response. Full data:', data);
         throw new Error('No transcription text received');
       }
     } catch (error) {
