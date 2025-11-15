@@ -135,8 +135,7 @@ export default function VoiceFillScreen() {
             contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]} 
             testID="voiceFillScroll"
           >
-
-          <Card style={styles.formCard}>
+            <Card style={styles.formCard}>
                 <View style={styles.formHeader}>
                   <View style={styles.headerRowLeft}>
                     <User color="#A7F3D0" />
@@ -260,14 +259,14 @@ export default function VoiceFillScreen() {
                 </Card>
               )}
 
-          <Card>
+            <Card>
             <View style={styles.tipRow}>
               <Info color="#9CA3AF" />
               <Text style={styles.tipText}>
                 Try saying: "My name is John Doe, email john@example.com, phone 555-1234, I live at 123 Main Street, and I work as a software engineer."
               </Text>
             </View>
-          </Card>
+            </Card>
           </ScrollView>
         </View>
 
