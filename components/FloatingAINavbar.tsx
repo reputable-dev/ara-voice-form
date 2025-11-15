@@ -202,6 +202,13 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       if (!sttResponse.ok) {
         const errorText = await sttResponse.text();
         console.error('STT API error:', sttResponse.status, errorText);
+        
+        if (sttResponse.status === 429) {
+          Alert.alert('Rate Limit', 'Too many requests. Please wait a moment and try again.');
+          setIsProcessing(false);
+          return;
+        }
+        
         throw new Error(`Transcription failed: ${sttResponse.status}`);
       }
 
@@ -234,8 +241,13 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         throw new Error('No transcription text received');
       }
     } catch (error) {
-      console.error('Error transcribing audio:', error);
-      Alert.alert('Error', 'Failed to transcribe audio. Please try again.');
+      console.error('Error processing transcription:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to transcribe audio';
+      if (errorMessage.includes('429')) {
+        Alert.alert('Rate Limit', 'Too many requests. Please wait a moment and try again.');
+      } else {
+        Alert.alert('Error', 'Failed to transcribe audio. Please try again.');
+      }
     } finally {
       setIsProcessing(false);
     }

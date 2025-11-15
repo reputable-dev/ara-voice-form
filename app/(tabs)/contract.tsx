@@ -105,7 +105,7 @@ export default function ContractScreen() {
             onVoiceFillComplete: handleVoiceFillComplete,
           }}
         />
-        <View style={[styles.backgroundWrapper, { paddingTop: insets.top }]}>
+        <View style={styles.backgroundWrapper}>
           <ScrollView 
             style={styles.container} 
             contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} 
@@ -516,6 +516,7 @@ const styles = StyleSheet.create({
   backgroundWrapper: {
     flex: 1,
     backgroundColor: '#1a1a1a',
+    paddingTop: 0,
   },
   container: { flex: 1 },
   content: { padding: 16, gap: 12 },
