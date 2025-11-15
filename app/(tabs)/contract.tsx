@@ -113,7 +113,6 @@ export default function ContractScreen() {
           >
             <View style={styles.grid}>
               <Card style={styles.panel}>
-
               <View style={styles.panelHeader}>
                 <View style={styles.headerLeft}>
                   <FileText color="#A7F3D0" />
