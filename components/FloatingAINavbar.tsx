@@ -303,7 +303,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         disabled={isProcessing}
         activeOpacity={0.7}
       >
-        <Animated.View style={{ transform: [{ scale: isVoiceFillMode && isRecording ? pulseAnim : 1 }] }}>
+        <Animated.View style={{ transform: [{ scale: (isVoiceFillMode && isRecording) ? pulseAnim : 1 }] }}>
           {isProcessing ? (
             <Loader color="#10B981" size={24} />
           ) : isVoiceFillMode && isRecording ? (
