@@ -110,11 +110,11 @@ export default function VoiceEditModal({
               </View>
             )}
             
-            {transcriptionText ? (
+            {transcriptionText && (
               <View style={styles.textContainer}>
                 <Text style={styles.transcriptionText}>{transcriptionText}</Text>
               </View>
-            ) : null}
+            )}
             
             <Text style={styles.statusText}>
               {isProcessing
@@ -144,11 +144,11 @@ export default function VoiceEditModal({
               </View>
             )}
             
-            {transcriptionText ? (
+            {transcriptionText && (
               <View style={styles.textContainer}>
                 <Text style={styles.transcriptionText}>{transcriptionText}</Text>
               </View>
-            ) : null}
+            )}
             
             <Text style={styles.statusText}>
               {isProcessing
