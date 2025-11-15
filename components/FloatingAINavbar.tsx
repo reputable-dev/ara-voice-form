@@ -10,12 +10,12 @@ import {
   TextInput,
   Dimensions,
   Alert,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   Home, 
   ClipboardList, 
-  Bot, 
   Calendar, 
   Users,
   Send,
@@ -24,6 +24,7 @@ import {
   Paperclip,
   Square,
   Loader,
+  MessageCircle,
 } from 'lucide-react-native';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { ContractFormData } from '@/types/contract';
@@ -54,7 +55,8 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
   const [activeTab, setActiveTab] = useState<string>('home');
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [isVoiceFillMode, setIsVoiceFillMode] = useState<boolean>(false);
+  const [transcriptionText, setTranscriptionText] = useState<string>('');
+  const [isVoiceUIVisible, setIsVoiceUIVisible] = useState<boolean>(false);
   const insets = useSafeAreaInsets();
   
   const heightAnim = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
@@ -62,6 +64,18 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
   const scrollViewRef = useRef<ScrollView>(null);
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const voiceUIAnim = useRef(new Animated.Value(0)).current;
+  const waveAnims = useRef([
+    new Animated.Value(0.3),
+    new Animated.Value(0.5),
+    new Animated.Value(0.7),
+    new Animated.Value(0.9),
+    new Animated.Value(0.7),
+    new Animated.Value(0.5),
+    new Animated.Value(0.3),
+  ]).current;
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLongPressRef = useRef<boolean>(false);
 
   useEffect(() => {
     Animated.spring(heightAnim, {
@@ -71,6 +85,15 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       friction: 10,
     }).start();
   }, [isChatOpen, heightAnim]);
+
+  useEffect(() => {
+    Animated.spring(voiceUIAnim, {
+      toValue: isVoiceUIVisible ? 1 : 0,
+      useNativeDriver: false,
+      tension: 50,
+      friction: 10,
+    }).start();
+  }, [isVoiceUIVisible, voiceUIAnim]);
 
   useEffect(() => {
     if (isRecording) {
@@ -88,17 +111,30 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
           }),
         ])
       ).start();
+
+      waveAnims.forEach((anim, index) => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(anim, {
+              toValue: 1,
+              duration: 400 + index * 100,
+              useNativeDriver: true,
+            }),
+            Animated.timing(anim, {
+              toValue: 0.3,
+              duration: 400 + index * 100,
+              useNativeDriver: true,
+            }),
+          ])
+        ).start();
+      });
     } else {
       pulseAnim.setValue(1);
+      waveAnims.forEach(anim => anim.setValue(0.3));
     }
-  }, [isRecording, pulseAnim]);
+  }, [isRecording, pulseAnim, waveAnims]);
 
-  const handleToggle = () => {
-    setIsChatOpen(!isChatOpen);
-    if (!isChatOpen) {
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
-  };
+
 
   const handleCancel = () => {
     setIsChatOpen(false);
@@ -136,12 +172,20 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         return;
       }
 
+      if (Platform.OS === 'ios') {
+        await AudioModule.setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+        });
+      }
+
       console.log('Preparing to record...');
       await audioRecorder.prepareToRecordAsync();
       
       console.log('Starting recording...');
       await audioRecorder.record();
       setIsRecording(true);
+      setTranscriptionText('Listening...');
       console.log('Recording started');
     } catch (err) {
       console.error('Failed to start recording', err);
@@ -149,12 +193,13 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
     }
   };
 
-  const stopRecording = async () => {
+  const stopRecording = async (doFinalAnalysis = true) => {
     if (!isRecording) return;
 
     console.log('Stopping recording...');
     setIsRecording(false);
     setIsProcessing(true);
+    setTranscriptionText('Processing...');
 
     try {
       await audioRecorder.stop();
@@ -162,16 +207,17 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       console.log('Recording stopped and stored at', uri);
 
       if (uri) {
-        await transcribeAudio(uri);
+        await transcribeAudio(uri, doFinalAnalysis);
       }
     } catch (error) {
       console.error('Failed to stop recording', error);
       Alert.alert('Error', 'Failed to process recording.');
       setIsProcessing(false);
+      setTranscriptionText('');
     }
   };
 
-  const transcribeAudio = async (uri: string) => {
+  const transcribeAudio = async (uri: string, doFinalAnalysis: boolean) => {
     try {
       console.log('Transcribing audio from:', uri);
 
@@ -206,6 +252,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         if (sttResponse.status === 429) {
           Alert.alert('Rate Limit', 'Too many requests. Please wait a moment and try again.');
           setIsProcessing(false);
+          setTranscriptionText('');
           return;
         }
         
@@ -216,26 +263,15 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       console.log('Transcription result:', data);
 
       if (data.text) {
-        if (isVoiceFillMode && contractData?.onVoiceFillComplete) {
+        setTranscriptionText(data.text);
+        
+        if (contractData?.onVoiceFillComplete) {
           contractData.onVoiceFillComplete(data.text);
-          setIsVoiceFillMode(false);
-          Alert.alert('Success', 'Voice transcription completed. AI is filling the form.');
-        } else {
-          setMessages(prev => [...prev, { role: 'user', content: data.text }]);
           
           setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 100);
-          
-          setTimeout(() => {
-            setMessages(prev => [...prev, { 
-              role: 'assistant', 
-              content: "I've received your message. How can I help you with that?" 
-            }]);
-            setTimeout(() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
-          }, 1000);
+            setTranscriptionText('');
+            setIsVoiceUIVisible(false);
+          }, 2000);
         }
       } else {
         throw new Error('No transcription text received');
@@ -248,27 +284,37 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       } else {
         Alert.alert('Error', 'Failed to transcribe audio. Please try again.');
       }
+      setTranscriptionText('');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleMicPress = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
+  const handleVoicePressIn = () => {
+    isLongPressRef.current = false;
+    pressTimerRef.current = setTimeout(() => {
+      isLongPressRef.current = true;
+      setIsVoiceUIVisible(true);
       startRecording();
+    }, 200);
+  };
+
+  const handleVoicePressOut = () => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+
+    if (isLongPressRef.current && isRecording) {
+      stopRecording(true);
     }
   };
 
-  const handleVoiceFillToggle = () => {
-    if (isVoiceFillMode) {
-      if (isRecording) {
-        stopRecording();
-      }
-      setIsVoiceFillMode(false);
+  const handleVoiceTap = () => {
+    if (isRecording) {
+      stopRecording(true);
     } else {
-      setIsVoiceFillMode(true);
+      setIsVoiceUIVisible(true);
       startRecording();
     }
   };
@@ -293,26 +339,27 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       >
         <ClipboardList color="#F59E0B" size={22} />
       </TouchableOpacity>
-      <TouchableOpacity
+      <Pressable
         style={[
           styles.iconButton, 
           styles.botButton,
-          isVoiceFillMode && styles.voiceFillActive
+          (isRecording || isVoiceUIVisible) && styles.voiceFillActive
         ]}
-        onPress={handleVoiceFillToggle}
+        onPressIn={handleVoicePressIn}
+        onPressOut={handleVoicePressOut}
+        onPress={handleVoiceTap}
         disabled={isProcessing}
-        activeOpacity={0.7}
       >
-        <Animated.View style={{ transform: [{ scale: (isVoiceFillMode && isRecording) ? pulseAnim : 1 }] }}>
+        <Animated.View style={{ transform: [{ scale: isRecording ? pulseAnim : 1 }] }}>
           {isProcessing ? (
             <Loader color="#10B981" size={24} />
-          ) : isVoiceFillMode && isRecording ? (
+          ) : isRecording ? (
             <Square color="#EF4444" size={24} fill="#EF4444" />
           ) : (
-            <Mic color={isVoiceFillMode ? "#EF4444" : "#10B981"} size={24} />
+            <Mic color={(isRecording || isVoiceUIVisible) ? "#EF4444" : "#10B981"} size={24} />
           )}
         </Animated.View>
-      </TouchableOpacity>
+      </Pressable>
       <TouchableOpacity
         style={[styles.iconButton, activeTab === 'schedule' && styles.iconButtonActive]}
         onPress={() => setActiveTab('schedule')}
@@ -357,7 +404,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.iconButton, isRecording && styles.recordingButton]}
-        onPress={handleMicPress}
+        onPress={() => {}}
         disabled={isProcessing}
         activeOpacity={0.7}
       >
@@ -391,6 +438,56 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         />
       ) : null}
 
+      {isVoiceUIVisible && (
+        <Animated.View
+          style={[
+            styles.voiceUIContainer,
+            {
+              bottom: insets.bottom + 100,
+              opacity: voiceUIAnim,
+              transform: [{
+                translateY: voiceUIAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [50, 0],
+                }),
+              }],
+            },
+          ]}
+        >
+          <View style={styles.voiceUI}>
+            {isRecording && (
+              <View style={styles.waveContainer}>
+                {waveAnims.map((anim, index) => (
+                  <Animated.View
+                    key={index}
+                    style={[
+                      styles.waveBar,
+                      {
+                        transform: [{ scaleY: anim }],
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+            
+            {transcriptionText ? (
+              <View style={styles.transcriptionContainer}>
+                <Text style={styles.transcriptionText}>{transcriptionText}</Text>
+              </View>
+            ) : null}
+            
+            <Text style={styles.voiceStatusText}>
+              {isProcessing
+                ? 'Processing...'
+                : isRecording
+                ? 'Recording... Tap to stop or release'
+                : 'Hold to record'}
+            </Text>
+          </View>
+        </Animated.View>
+      )}
+
       <Animated.View
         style={[
           styles.navbarContainer,
@@ -405,7 +502,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
             <View style={styles.chatContainer}>
               <View style={styles.chatHeader}>
                 <View style={styles.chatHeaderLeft}>
-                  <Bot color="#10B981" size={24} />
+                  <MessageCircle color="#10B981" size={24} />
                   <Text style={styles.chatTitle}>AI Assistant</Text>
                 </View>
               </View>
@@ -660,5 +757,74 @@ const styles = StyleSheet.create({
     color: '#A7F3D0',
     fontSize: 14,
     fontWeight: '500' as const,
+  },
+  voiceUIContainer: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  voiceUI: {
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    padding: 24,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 12,
+      },
+      web: {
+        boxShadow: '0 4px 24px rgba(16, 185, 129, 0.3)',
+      },
+    }),
+  },
+  waveContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 60,
+    gap: 4,
+    marginBottom: 16,
+  },
+  waveBar: {
+    width: 4,
+    height: 40,
+    backgroundColor: '#10B981',
+    borderRadius: 2,
+  },
+  transcriptionContainer: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    width: '100%',
+    minHeight: 60,
+  },
+  transcriptionText: {
+    color: '#D1FAE5',
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500' as const,
+    textAlign: 'center',
+  },
+  voiceStatusText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontWeight: '500' as const,
+    textAlign: 'center',
   },
 });
