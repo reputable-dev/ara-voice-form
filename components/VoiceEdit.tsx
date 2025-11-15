@@ -33,6 +33,8 @@ export default function VoiceEdit({
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [transcriptionText, setTranscriptionText] = useState<string>('');
+  const [blurIntensity, setBlurIntensity] = useState<number>(0);
+  const [webBlurOpacity, setWebBlurOpacity] = useState<number>(0);
   const [modalPosition, setModalPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -65,7 +67,15 @@ export default function VoiceEdit({
       useNativeDriver: false,
       tension: 50,
       friction: 10,
-    }).start();
+    }).start(({ finished }) => {
+      if (finished && isLongPress) {
+        setBlurIntensity(80);
+        setWebBlurOpacity(0.6);
+      } else if (!isLongPress) {
+        setBlurIntensity(0);
+        setWebBlurOpacity(0);
+      }
+    });
 
     Animated.spring(modalAnim, {
       toValue: isLongPress ? 1 : 0,
@@ -303,16 +313,16 @@ export default function VoiceEdit({
     <>
       {isLongPress && Platform.OS !== 'web' && (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <BlurView intensity={blurAnim as any} style={StyleSheet.absoluteFill} tint="dark" />
+          <BlurView intensity={blurIntensity} style={StyleSheet.absoluteFill} tint="dark" />
         </View>
       )}
       
       {isLongPress && Platform.OS === 'web' && (
-        <Animated.View 
+        <View 
           style={[
             StyleSheet.absoluteFill,
             {
-              backgroundColor: `rgba(0, 0, 0, ${blurAnim})`,
+              backgroundColor: `rgba(0, 0, 0, ${webBlurOpacity})`,
             }
           ]} 
           pointerEvents="none"
