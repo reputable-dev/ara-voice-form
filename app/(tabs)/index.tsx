@@ -128,22 +128,13 @@ export default function VoiceFillScreen() {
             headerRight,
           }}
         />
-        <View style={[styles.backgroundWrapper, { paddingTop: insets.top }]}>
+        <View style={styles.backgroundWrapper}>
+          <View style={[styles.safeAreaTop, { height: insets.top }]} />
           <ScrollView 
             style={styles.container} 
             contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]} 
             testID="voiceFillScroll"
           >
-          <Card style={styles.hero}>
-            <Text style={styles.h1}>Voice Fill</Text>
-            <View style={styles.badge}>
-              <Mic color="#A7F3D0" />
-              <Text style={styles.badgeText}>Speak • Transcribe • Auto-fill</Text>
-            </View>
-            <Text style={styles.subtleCenter}>
-              Press the record button, speak naturally, and watch your form fill automatically with AI-powered voice recognition.
-            </Text>
-          </Card>
 
           <Card style={styles.formCard}>
                 <View style={styles.formHeader}>
@@ -320,38 +311,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a1a',
   },
+  safeAreaTop: {
+    backgroundColor: '#1a1a1a',
+  },
   container: { 
     flex: 1,
   },
   content: { padding: 16, gap: 12 },
-  hero: { 
-    gap: 10, 
-    backgroundColor: "rgba(0,0,0,0.50)",
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  h1: { 
-    color: "#F3F4F6", 
-    fontSize: 28, 
-    fontWeight: "700" as const,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 2,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "rgba(16,185,129,0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(16,185,129,0.35)",
-    borderRadius: 999,
-  },
-  badgeText: { color: "#A7F3D0", fontStyle: "italic" as const, fontSize: 13 },
-  subtleCenter: { color: "#D1D5DB", opacity: 0.85, fontSize: 14, lineHeight: 20 },
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
