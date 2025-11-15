@@ -7,6 +7,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import InputField from "@/components/InputField";
 import TagToggle from "@/components/TagToggle";
 import FloatingAINavbar from "@/components/FloatingAINavbar";
+import VoiceEdit from "@/components/VoiceEdit";
 import { BadgeCheck, FileText, RotateCcw, IdCard, Briefcase } from "lucide-react-native";
 import { ContractFormData } from "@/types/contract";
 import { applyParsedToState, initialContractData, parseContractSource } from "@/utils/contractParser";
@@ -208,16 +209,22 @@ export default function ContractScreen() {
 
               <View style={styles.block}>
                 <Text style={styles.label}>Summary & instructions</Text>
-                <TextInput
+                <VoiceEdit
                   value={data.summary}
-                  onChangeText={(v) => setData({ ...data, summary: v })}
-                  multiline
-                  numberOfLines={4}
-                  style={styles.textarea}
-                  placeholder="Notes, instructions, and changes"
-                  placeholderTextColor="#6B7280"
-                  testID="cf-summary"
-                />
+                  onValueChange={(v) => setData({ ...data, summary: v })}
+                  fieldName="Summary & instructions"
+                >
+                  <TextInput
+                    value={data.summary}
+                    onChangeText={(v) => setData({ ...data, summary: v })}
+                    multiline
+                    numberOfLines={4}
+                    style={styles.textarea}
+                    placeholder="Notes, instructions, and changes"
+                    placeholderTextColor="#6B7280"
+                    testID="cf-summary"
+                  />
+                </VoiceEdit>
               </View>
 
               <View style={styles.row3}>
@@ -243,30 +250,42 @@ export default function ContractScreen() {
 
               <View style={styles.block}>
                 <Text style={styles.label}>September invoice adjustments</Text>
-                <TextInput
+                <VoiceEdit
                   value={data.septemberAdjustments}
-                  onChangeText={(v) => setData({ ...data, septemberAdjustments: v })}
-                  multiline
-                  numberOfLines={3}
-                  style={styles.textarea}
-                  placeholder="Line items and amounts"
-                  placeholderTextColor="#6B7280"
-                  testID="cf-sept-adjust"
-                />
+                  onValueChange={(v) => setData({ ...data, septemberAdjustments: v })}
+                  fieldName="September invoice adjustments"
+                >
+                  <TextInput
+                    value={data.septemberAdjustments}
+                    onChangeText={(v) => setData({ ...data, septemberAdjustments: v })}
+                    multiline
+                    numberOfLines={3}
+                    style={styles.textarea}
+                    placeholder="Line items and amounts"
+                    placeholderTextColor="#6B7280"
+                    testID="cf-sept-adjust"
+                  />
+                </VoiceEdit>
               </View>
 
               <View style={styles.block}>
                 <Text style={styles.label}>Remodelling note</Text>
-                <TextInput
+                <VoiceEdit
                   value={data.remodellingNote}
-                  onChangeText={(v) => setData({ ...data, remodellingNote: v })}
-                  multiline
-                  numberOfLines={3}
-                  style={styles.textarea}
-                  placeholder="Remodelling details"
-                  placeholderTextColor="#6B7280"
-                  testID="cf-remodel"
-                />
+                  onValueChange={(v) => setData({ ...data, remodellingNote: v })}
+                  fieldName="Remodelling note"
+                >
+                  <TextInput
+                    value={data.remodellingNote}
+                    onChangeText={(v) => setData({ ...data, remodellingNote: v })}
+                    multiline
+                    numberOfLines={3}
+                    style={styles.textarea}
+                    placeholder="Remodelling details"
+                    placeholderTextColor="#6B7280"
+                    testID="cf-remodel"
+                  />
+                </VoiceEdit>
               </View>
 
               <View style={styles.subsectionHeader}>
