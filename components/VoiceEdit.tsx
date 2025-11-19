@@ -277,10 +277,10 @@ export default function VoiceEdit({
         setModalPosition({ x: modalX, y: modalY });
 
         pressTimerRef.current = setTimeout(() => {
-          console.log('VoiceEdit: Long press detected');
+          console.log('VoiceEdit: Long press detected (2 seconds)');
           setIsLongPress(true);
           startRecording();
-        }, 500);
+        }, 2000);
       },
       onPanResponderRelease: () => {
         if (pressTimerRef.current) {
