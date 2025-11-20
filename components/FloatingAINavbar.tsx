@@ -495,11 +495,11 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
               </View>
             )}
             
-            {transcriptionText ? (
+            {transcriptionText && (
               <View style={styles.transcriptionContainer}>
                 <Text style={styles.transcriptionText}>{transcriptionText}</Text>
               </View>
-            ) : null}
+            )}
             
             <Text style={styles.voiceStatusText}>
               {isProcessing
