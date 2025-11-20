@@ -1,3 +1,4 @@
+import { generateText } from "@rork-ai/toolkit-sdk";
 import React, { useState, useRef, useEffect, ReactNode } from 'react';
 import {
   View,
@@ -205,10 +206,15 @@ export default function VoiceEdit({
         
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        const processedText = processEdit(value, data.text, fieldName);
-        onValueChange(processedText);
+        try {
+          const processedText = await processSmartEdit(value, data.text, fieldName);
+          onValueChange(processedText);
+          setTranscriptionText('Edit applied!');
+        } catch (editError) {
+          console.error('VoiceEdit: Edit failed', editError);
+          setTranscriptionText('Edit failed');
+        }
         
-        setTranscriptionText('Edit applied!');
         await new Promise(resolve => setTimeout(resolve, 1000));
         handleCancel();
       } else {
@@ -227,28 +233,34 @@ export default function VoiceEdit({
     }
   };
 
-  const processEdit = (currentValue: string, spokenText: string, field: string): string => {
-    const lowerSpoken = spokenText.toLowerCase();
-    
-    if (lowerSpoken.includes('clear') || lowerSpoken.includes('delete') || lowerSpoken.includes('remove')) {
-      return '';
+  const processSmartEdit = async (currentValue: string, spokenText: string, field: string): Promise<string> => {
+    try {
+      const prompt = `
+You are a smart text editing assistant.
+Current text in field "${field}": "${currentValue}"
+User instruction/spoken text: "${spokenText}"
+
+Task: Update the text based on the user's instruction.
+Rules:
+1. If the user says "clear" or "delete", return an empty string.
+2. If the user provides new content, replace or append as appropriate based on context.
+3. If the user says "change X to Y", perform the replacement.
+4. Return ONLY the final text. No explanations.
+`;
+
+      const result = await generateText({
+        messages: [{ role: 'user', content: prompt }]
+      });
+      
+      return result.trim();
+    } catch (error) {
+      console.error('Smart edit failed, falling back to basic logic', error);
+      // Fallback logic
+      const lowerSpoken = spokenText.toLowerCase();
+      if (lowerSpoken.includes('clear') || lowerSpoken.includes('delete')) return '';
+      if (lowerSpoken.includes('append') || lowerSpoken.includes('add')) return `${currentValue} ${spokenText}`.trim();
+      return spokenText;
     }
-    
-    if (lowerSpoken.includes('change to') || lowerSpoken.includes('set to') || lowerSpoken.includes('make it')) {
-      const match = spokenText.match(/(?:change to|set to|make it)\s+(.+)/i);
-      if (match) {
-        return match[1].trim();
-      }
-    }
-    
-    if (lowerSpoken.includes('add') || lowerSpoken.includes('append')) {
-      const match = spokenText.match(/(?:add|append)\s+(.+)/i);
-      if (match) {
-        return currentValue ? `${currentValue} ${match[1].trim()}` : match[1].trim();
-      }
-    }
-    
-    return spokenText;
   };
 
   const handleCancel = () => {
