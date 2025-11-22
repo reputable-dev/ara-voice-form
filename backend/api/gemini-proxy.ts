@@ -11,7 +11,9 @@
  *   }
  */
 
-import { Request, Response } from 'express';
+import { Hono } from 'hono';
+
+const app = new Hono();
 
 interface OpenRouterProxyRequest {
   prompt: string;
@@ -23,27 +25,27 @@ interface OpenRouterProxyRequest {
   };
 }
 
-export async function POST(req: Request, res: Response) {
+app.post('/api/gemini-proxy', async (c) => {
   try {
     // Validate request
-    const { prompt, generationConfig }: OpenRouterProxyRequest = req.body;
+    const { prompt, generationConfig }: OpenRouterProxyRequest = await c.req.json();
 
     if (!prompt || typeof prompt !== 'string') {
-      return res.status(400).json({
+      return c.json({
         error: 'Invalid request',
         message: 'Prompt is required and must be a string'
-      });
+      }, 400);
     }
 
     // Get API key from environment (server-side only)
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = c.env?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
 
     if (!apiKey) {
       console.error('OPENROUTER_API_KEY not configured in environment');
-      return res.status(500).json({
+      return c.json({
         error: 'Configuration error',
         message: 'Server is not properly configured. Please contact support.'
-      });
+      }, 500);
     }
 
     // Prepare OpenRouter API request
@@ -68,8 +70,8 @@ export async function POST(req: Request, res: Response) {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || '', // Optional: for rankings
-        'X-Title': process.env.OPENROUTER_X_TITLE || '', // Optional: for rankings
+        'HTTP-Referer': c.env?.OPENROUTER_HTTP_REFERER || process.env.OPENROUTER_HTTP_REFERER || '', // Optional: for rankings
+        'X-Title': c.env?.OPENROUTER_X_TITLE || process.env.OPENROUTER_X_TITLE || '', // Optional: for rankings
       },
       body: JSON.stringify(requestBody),
     });
@@ -79,10 +81,10 @@ export async function POST(req: Request, res: Response) {
       console.error('OpenRouter API error:', response.status, errorText);
 
       // Don't expose detailed error to client
-      return res.status(response.status).json({
+      return c.json({
         error: 'AI service error',
         message: 'Failed to process request. Please try again.'
-      });
+      }, response.status);
     }
 
     const data = await response.json();
@@ -90,16 +92,16 @@ export async function POST(req: Request, res: Response) {
     // Validate response format
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error('Invalid OpenRouter API response format:', JSON.stringify(data));
-      return res.status(500).json({
+      return c.json({
         error: 'Invalid response',
         message: 'Received invalid response from AI service'
-      });
+      }, 500);
     }
 
     // Extract and return AI response
     const aiResponse = data.choices[0].message.content;
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       response: aiResponse,
       model: 'anthropic/claude-3-haiku'
@@ -108,21 +110,11 @@ export async function POST(req: Request, res: Response) {
   } catch (error) {
     console.error('OpenRouter proxy error:', error);
 
-    return res.status(500).json({
+    return c.json({
       error: 'Server error',
       message: 'An unexpected error occurred. Please try again.'
-    });
+    }, 500);
   }
-}
+});
 
-// For serverless deployment (Vercel, Netlify, etc.)
-export default async function handler(req: Request, res: Response) {
-  if (req.method === 'POST') {
-    return POST(req, res);
-  }
-
-  return res.status(405).json({
-    error: 'Method not allowed',
-    message: 'Only POST requests are accepted'
-  });
-}
+export default app;

@@ -15,7 +15,7 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "EXPO_PUBLIC_RORK_API_BASE_URL": "http://localhost:3000"
+        "EXPO_PUBLIC_API_BASE_URL": "http://localhost:3000"
       },
       "channel": "development"
     },
@@ -28,7 +28,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_RORK_API_BASE_URL": "https://api-staging.yourapp.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api-staging.yourapp.com"
       },
       "channel": "preview"
     },
@@ -40,7 +40,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_RORK_API_BASE_URL": "https://api.yourapp.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.yourapp.com"
       },
       "autoIncrement": true,
       "channel": "production"

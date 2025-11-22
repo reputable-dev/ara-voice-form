@@ -14,7 +14,7 @@ global.__ExpoImportMetaRegistry = {
 // Mock environment variables
 process.env.EXPO_PUBLIC_OPENROUTER_API_KEY = 'test-api-key';
 process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY = 'test-elevenlabs-key';
-process.env.EXPO_PUBLIC_RORK_API_BASE_URL = 'http://localhost:3000';
+process.env.EXPO_PUBLIC_API_BASE_URL = 'http://localhost:3000';
 process.env.EXPO_PUBLIC_SENTRY_DSN = 'https://test@sentry.io/123';
 
 // Mock Sentry

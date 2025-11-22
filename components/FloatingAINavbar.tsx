@@ -27,7 +27,13 @@ import {
   MessageCircle,
 } from 'lucide-react-native';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
-import AudioRecord from 'react-native-audio-record';
+// Safe import handling for react-native-audio-record
+let AudioRecord: any = null;
+try {
+  AudioRecord = require('react-native-audio-record').default;
+} catch (error) {
+  console.warn('react-native-audio-record not available, using fallback mode');
+}
 import { ContractFormData } from '@/types/contract';
 
 interface ContractData {
@@ -84,16 +90,20 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
 
    // Initialize AudioRecord for real-time streaming
    useEffect(() => {
-     const options = {
-       sampleRate: 16000,  // 16kHz for Scribe v2 Realtime
-       channels: 1,        // Mono
-       bitsPerSample: 16,  // 16-bit PCM
-       audioSource: 6,     // VOICE_COMMUNICATION
-       wavFile: undefined, // No file output, we want raw data
-     };
+     if (AudioRecord) {
+       const options = {
+         sampleRate: 16000,  // 16kHz for Scribe v2 Realtime
+         channels: 1,        // Mono
+         bitsPerSample: 16,  // 16-bit PCM
+         audioSource: 6,     // VOICE_COMMUNICATION
+         wavFile: undefined, // No file output, we want raw data
+       };
 
-     AudioRecord.init(options);
-     console.log('FloatingAINavbar: AudioRecord initialized for real-time streaming');
+       AudioRecord.init(options);
+       console.log('FloatingAINavbar: AudioRecord initialized for real-time streaming');
+     } else {
+       console.log('FloatingAINavbar: AudioRecord not available, using fallback mode');
+     }
    }, []);
 
    useEffect(() => {
@@ -174,7 +184,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
       }
 
       // Stop recording if active
-      if (isRecording) {
+      if (isRecording && AudioRecord) {
         AudioRecord.stop();
       }
     };
@@ -419,7 +429,7 @@ export default function FloatingAINavbar({ visible = true, contractData }: Float
         wsConnected = false;
       }
 
-      if (wsConnected) {
+      if (wsConnected && AudioRecord) {
         // Use real-time streaming
         console.log('FloatingAINavbar: Starting real-time audio streaming');
 

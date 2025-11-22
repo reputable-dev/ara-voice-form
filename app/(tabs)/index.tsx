@@ -39,7 +39,7 @@ export default function VoiceFillScreen() {
 
     try {
       // Use backend proxy for secure API calls (API key is server-side only)
-      const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'http://localhost:3000';
+      const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000';
       const proxyUrl = `${baseUrl}/api/gemini-proxy`;
 
       const prompt = `Extract structured information from the following text and return it as JSON with these exact fields: name, email, phone, address, occupation, message. If a field is not mentioned, use an empty string. Only return the JSON object, nothing else.\n\nText: ${text}`;
@@ -261,7 +261,7 @@ export default function VoiceFillScreen() {
             <View style={styles.tipRow}>
               <Info color="#9CA3AF" />
               <Text style={styles.tipText}>
-                Try saying: "My name is John Doe, email john@example.com, phone 555-1234, I live at 123 Main Street, and I work as a software engineer."
+                Try saying: &quot;My name is John Doe, email john@example.com, phone 555-1234, I live at 123 Main Street, and I work as a software engineer.&quot;
               </Text>
             </View>
             </Card>

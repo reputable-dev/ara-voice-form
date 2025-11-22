@@ -11,7 +11,13 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
-import AudioRecord from 'react-native-audio-record';
+// Safe import handling for react-native-audio-record
+let AudioRecord: any = null;
+try {
+  AudioRecord = require('react-native-audio-record').default;
+} catch (error) {
+  console.warn('react-native-audio-record not available, using fallback mode');
+}
 import VoiceEditModal from './VoiceEditModal';
 import { captureException, addBreadcrumb } from '@/lib/sentry';
 
@@ -53,18 +59,22 @@ export default function VoiceEdit({
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchPositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Initialize AudioRecord for real-time streaming
+  // Initialize AudioRecord for real-time streaming (only if available)
   useEffect(() => {
-    const options = {
-      sampleRate: 16000,  // 16kHz for Scribe v2 Realtime
-      channels: 1,        // Mono
-      bitsPerSample: 16,  // 16-bit PCM
-      audioSource: 6,     // VOICE_COMMUNICATION
-      wavFile: undefined, // No file output, we want raw data
-    };
+    if (AudioRecord) {
+      const options = {
+        sampleRate: 16000,  // 16kHz for Scribe v2 Realtime
+        channels: 1,        // Mono
+        bitsPerSample: 16,  // 16-bit PCM
+        audioSource: 6,     // VOICE_COMMUNICATION
+        wavFile: undefined, // No file output, we want raw data
+      };
 
-    AudioRecord.init(options);
-    console.log('VoiceEdit: AudioRecord initialized for real-time streaming');
+      AudioRecord.init(options);
+      console.log('VoiceEdit: AudioRecord initialized for real-time streaming');
+    } else {
+      console.log('VoiceEdit: AudioRecord not available, using fallback mode');
+    }
   }, []);
 
   useEffect(() => {
@@ -129,7 +139,7 @@ export default function VoiceEdit({
       }
 
       // Stop recording if active
-      if (isRecording) {
+      if (isRecording && AudioRecord) {
         AudioRecord.stop();
       }
     };
@@ -354,7 +364,7 @@ export default function VoiceEdit({
         wsConnected = false;
       }
 
-      if (wsConnected) {
+      if (wsConnected && AudioRecord) {
         // Use real-time streaming
         console.log('VoiceEdit: Starting real-time audio streaming');
 
@@ -391,7 +401,9 @@ export default function VoiceEdit({
           }
 
           // Stop recording and close connection
-          AudioRecord.stop();
+          if (AudioRecord) {
+            AudioRecord.stop();
+          }
           if (audioStreamRef.current) {
             audioStreamRef.current.remove();
             audioStreamRef.current = null;
@@ -495,6 +507,19 @@ export default function VoiceEdit({
         audioUri: uri,
       });
       Alert.alert('Error', 'Failed to transcribe audio. Please try again.');
+      handleCancel();
+    }
+  };
+
+  const handleAccept = async (transcription: string) => {
+    try {
+      setIsProcessing(true);
+      const updatedValue = await processSmartEdit(value, transcription, fieldName);
+      onValueChange(updatedValue);
+      handleCancel();
+    } catch (error) {
+      console.error('VoiceEdit: Failed to process edit:', error);
+      Alert.alert('Error', 'Failed to process voice edit. Please try again.');
       handleCancel();
     }
   };

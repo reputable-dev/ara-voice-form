@@ -10,8 +10,15 @@ import {
 } from 'react-native';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { Mic, Square, Loader } from 'lucide-react-native';
-import AudioRecord from 'react-native-audio-record';
 import Colors from '@/constants/colors';
+
+// Safe import handling for react-native-audio-record
+let AudioRecord: any = null;
+try {
+  AudioRecord = require('react-native-audio-record').default;
+} catch (error) {
+  console.warn('react-native-audio-record not available, using fallback mode');
+}
 
 interface VoiceRecorderProps {
   onTranscriptionComplete: (text: string) => void;
@@ -51,16 +58,20 @@ export default function VoiceRecorder({
 
   // Initialize AudioRecord for real-time streaming
   useEffect(() => {
-    const options = {
-      sampleRate: 16000,  // 16kHz for Scribe v2 Realtime
-      channels: 1,        // Mono
-      bitsPerSample: 16,  // 16-bit PCM
-      audioSource: 6,     // VOICE_COMMUNICATION
-      wavFile: undefined, // No file output, we want raw data
-    };
+    if (AudioRecord) {
+      const options = {
+        sampleRate: 16000,  // 16kHz for Scribe v2 Realtime
+        channels: 1,        // Mono
+        bitsPerSample: 16,  // 16-bit PCM
+        audioSource: 6,     // VOICE_COMMUNICATION
+        wavFile: undefined, // No file output, we want raw data
+      };
 
-    AudioRecord.init(options);
-    console.log('AudioRecord initialized for real-time streaming');
+      AudioRecord.init(options);
+      console.log('AudioRecord initialized for real-time streaming');
+    } else {
+      console.log('AudioRecord not available, using fallback mode');
+    }
   }, []);
 
   useEffect(() => {
@@ -306,26 +317,28 @@ export default function VoiceRecorder({
       }
 
       // Start AudioRecord for real-time streaming
-      AudioRecord.start();
+      if (AudioRecord) {
+        AudioRecord.start();
 
-      // Set up audio data listener
-      audioStreamRef.current = AudioRecord.on('data', (data: any) => {
-        if (wsConnected && websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
-          try {
-            // Convert audio data to base64 and send to WebSocket
-            const base64Audio = data.toString('base64');
-            websocketRef.current.send(JSON.stringify({
-              message_type: 'input_audio_chunk',
-              audio_base_64: base64Audio,
-              commit: false,
-              sample_rate: 16000,
-            }));
-            lastAudioChunkRef.current = Date.now();
-          } catch (error) {
-            console.error('Error sending audio chunk:', error);
+        // Set up audio data listener
+        audioStreamRef.current = AudioRecord.on('data', (data: any) => {
+          if (wsConnected && websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+            try {
+              // Convert audio data to base64 and send to WebSocket
+              const base64Audio = data.toString('base64');
+              websocketRef.current.send(JSON.stringify({
+                message_type: 'input_audio_chunk',
+                audio_base_64: base64Audio,
+                commit: false,
+                sample_rate: 16000,
+              }));
+              lastAudioChunkRef.current = Date.now();
+            } catch (error) {
+              console.error('Error sending audio chunk:', error);
+            }
           }
-        }
-      });
+        });
+      }
 
       setIsRecording(true);
       onRecordingStateChange?.(true);
@@ -414,7 +427,9 @@ export default function VoiceRecorder({
 
     try {
       // Stop AudioRecord
-      AudioRecord.stop();
+      if (AudioRecord) {
+        AudioRecord.stop();
+      }
 
       // Remove audio data listener
       if (audioStreamRef.current) {
