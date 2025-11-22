@@ -230,6 +230,88 @@ import { BarVisualizer } from '@/components/elevenlabs';
 
 ---
 
+#### `<TranscriptViewer>`
+Word-by-word transcript highlighting synced to audio playback.
+
+```tsx
+import { TranscriptViewer, Word } from '@/components/elevenlabs';
+
+const words: Word[] = [
+  { text: 'Hello', startTime: 0, endTime: 0.5 },
+  { text: 'world', startTime: 0.5, endTime: 1.0 },
+];
+
+<TranscriptViewer
+  words={words}
+  currentTime={audioPosition}
+  onWordPress={(word, index) => seekTo(word.startTime)}
+  autoScroll={true}
+/>
+```
+
+**Props:**
+- `words: Word[]` - Array of words with timing data
+  - `Word: { text: string, startTime: number, endTime: number }`
+- `currentTime: number` - Current playback position in seconds
+- `onWordPress?: (word: Word, index: number) => void` - Called when word is tapped
+- `highlightColor?: string` - Active word color (default: Colors.light.tint)
+- `textColor?: string` - Default text color
+- `fontSize?: number` - Font size in pixels (default: `16`)
+- `lineHeight?: number` - Line height in pixels (default: `28`)
+- `autoScroll?: boolean` - Auto-scroll to active word (default: `true`)
+
+**Features:**
+- Word-by-word highlighting synced to audio time
+- Automatic scrolling to keep current word visible
+- Tap any word to seek to that position
+- Passed words fade to 50% opacity
+- Active word gets bold weight and highlight color
+- Smooth scroll animations
+
+**Use Cases:**
+- Podcast/audio transcriptions
+- Language learning apps
+- Accessibility features
+- Karaoke-style lyrics display
+
+---
+
+#### `<AudioPlayer>`
+Audio playback controller with progress tracking.
+
+```tsx
+import { AudioPlayer } from '@/components/elevenlabs';
+
+<AudioPlayer
+  audioUri="https://example.com/audio.mp3"
+  onPlaybackUpdate={(positionMs, durationMs) => {
+    setCurrentTime(positionMs / 1000);
+  }}
+  autoPlay={false}
+  showControls={true}
+/>
+```
+
+**Props:**
+- `audioUri: string` - Audio file URI (local or remote)
+- `onPlaybackUpdate?: (positionMillis: number, durationMillis: number) => void` - Playback position updates
+- `onPlaybackStatusChange?: (isPlaying: boolean) => void` - Play/pause state changes
+- `autoPlay?: boolean` - Auto-play on load (default: `false`)
+- `showControls?: boolean` - Show control buttons (default: `true`)
+
+**Features:**
+- Play/pause controls
+- Skip forward/backward (10 seconds)
+- Progress bar with time display
+- Background audio support (iOS)
+- Automatic audio session management
+- Error handling with user feedback
+
+**Control Methods:**
+The component uses `expo-av` for audio playback and exposes standard playback controls through the UI.
+
+---
+
 ## 🚀 Conversational AI Service
 
 ### `ConversationalAI` Class

@@ -21,3 +21,9 @@ export type { LiveWaveformProps } from './audio/LiveWaveform';
 
 export { default as BarVisualizer } from './audio/BarVisualizer';
 export type { BarVisualizerProps } from './audio/BarVisualizer';
+
+export { default as TranscriptViewer } from './audio/TranscriptViewer';
+export type { TranscriptViewerProps, Word } from './audio/TranscriptViewer';
+
+export { default as AudioPlayer } from './audio/AudioPlayer';
+export type { AudioPlayerProps } from './audio/AudioPlayer';

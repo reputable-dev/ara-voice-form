@@ -179,6 +179,8 @@ The app now includes a complete suite of **production-ready conversational AI co
 **Audio Visualization:**
 - `<LiveWaveform>` - Real-time animated waveform (20 bars with stagger effect)
 - `<BarVisualizer>` - Frequency spectrum visualizer with smoothing
+- `<TranscriptViewer>` - Word-by-word transcript highlighting synced to audio playback
+- `<AudioPlayer>` - Audio playback controller with progress and controls
 
 **Conversational AI Service:**
 ```typescript
