@@ -1,62 +1,81 @@
 {
   "expo": {
-    "name": "Ask ARA — Knowledge Assistant",
-    "slug": "ask-ara-knowledge-assistant",
+    "name": "Agent ARA — AI Voice Companion",
+    "slug": "agent-ara-ai-companion",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "ara-voice-form",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "jsEngine": "hermes",
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.ask-ara-knowledge-assistant",
+      "bundleIdentifier": "app.ara.ask-ara",
+      "runtimeVersion": "1.0.0",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone for voice features",
         "UIBackgroundModes": [
           "audio",
-          "audio"
+          "audio-processing"
+        ],
+        "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for secure voice authentication",
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSBluetoothAlwaysUsageDescription": "Allow $(PRODUCT_NAME) to use Bluetooth for audio devices",
+        "NSBluetoothPeripheralUsageDescription": "Allow $(PRODUCT_NAME) to connect to Bluetooth peripherals",
+        "UIRequiredDeviceCapabilities": [
+          "armv7"
         ]
       },
-      "runtimeVersion": "1.0.0"
+      "buildNumber": "1.0.0",
+      "icon": "./assets/images/icon.png"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.ask-ara-knowledge-assistant",
+      "package": "app.ara.askara",
+      "runtimeVersion": {
+        "policy": "appVersion"
+      },
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "runtimeVersion": {
-        "policy": "appVersion"
-      }
+      "versionCode": 1,
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "minSdkVersion": 24
     },
     "web": {
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       [
         "expo-router",
         {
-          "origin": "https://rork.com/"
+          "origin": "https://ara.ara.com/",
+          "root": "./app"
         }
       ],
       [
@@ -74,23 +93,50 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice features and biometric authentication"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "flipper": false,
+            "newArchEnabled": true,
+            "bundleIdentifier": "app.ara.askara"
+          },
+          "android": {
+            "newArchEnabled": true,
+            "package": "app.ara.askara"
+          }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactNativeRuntime": "hermes"
     },
     "extra": {
       "router": {
-        "origin": "https://rork.com/"
+        "origin": "https://ara.ara.com/"
       },
       "eas": {
         "projectId": "eb58273e-8ccf-48bc-b2ec-faf55f4b2526"
       }
     },
     "updates": {
-      "url": "https://u.expo.dev/eb58273e-8ccf-48bc-b2ec-faf55f4b2526"
-    }
+      "url": "https://u.expo.dev/eb58273e-8ccf-48bc-b2ec-faf55f4b2526",
+      "fallbackToCacheTimeout": 0,
+      "enabled": true
+    },
+    "owner": "ara-voice-form"
   }
 }
