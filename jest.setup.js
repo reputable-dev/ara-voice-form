@@ -12,7 +12,8 @@ global.__ExpoImportMetaRegistry = {
 };
 
 // Mock environment variables
-process.env.EXPO_PUBLIC_GEMINI_API_KEY = 'test-api-key';
+process.env.EXPO_PUBLIC_OPENROUTER_API_KEY = 'test-api-key';
+process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY = 'test-elevenlabs-key';
 process.env.EXPO_PUBLIC_RORK_API_BASE_URL = 'http://localhost:3000';
 process.env.EXPO_PUBLIC_SENTRY_DSN = 'https://test@sentry.io/123';
 
@@ -77,6 +78,29 @@ jest.mock('expo-audio', () => ({
   },
 }));
 
+// Mock react-native-audio-record
+jest.mock('react-native-audio-record', () => ({
+  init: jest.fn(),
+  start: jest.fn(),
+  stop: jest.fn(),
+  on: jest.fn(() => ({
+    remove: jest.fn(),
+  })),
+}));
+
+// Mock WebSocket for testing
+global.WebSocket = jest.fn().mockImplementation(() => ({
+  readyState: 1, // OPEN
+  send: jest.fn(),
+  close: jest.fn(),
+  onopen: null,
+  onmessage: null,
+  onerror: null,
+  onclose: null,
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+}));
+
 // Mock expo-blur
 jest.mock('expo-blur', () => ({
   BlurView: 'BlurView',
@@ -137,18 +161,28 @@ jest.doMock('@rork-ai/toolkit-sdk', () => ({
 
 // Mock fetch for API calls
 global.fetch = jest.fn((url) => {
-  if (url.includes('gemini')) {
+  if (url.includes('openrouter.ai')) {
     return Promise.resolve({
       ok: true,
       json: () =>
         Promise.resolve({
-          candidates: [
+          choices: [
             {
-              content: {
-                parts: [{ text: 'AI response text' }],
+              message: {
+                content: 'AI response text',
               },
             },
           ],
+        }),
+    });
+  }
+
+  if (url.includes('api.elevenlabs.io/v1/scribe')) {
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          text: 'Transcribed text from ElevenLabs ScribeV2',
         }),
     });
   }

@@ -96,9 +96,12 @@ The voice-to-form application demonstrates a **well-architected, modern React Na
                ▼
 ┌──────────────────────────────────────────────────────────┐
 │         Speech-to-Text Service (External)                │
-│  https://toolkit.rork.com/stt/transcribe/                │
-│  - FormData upload (audio file)                          │
-│  - Returns: { text: "transcribed speech" }               │
+│  ElevenLabs ScribeV2 Realtime (WebSocket Streaming)      │
+│  - WebSocket: wss://api.elevenlabs.io/v1/speech-to-text/realtime │
+│  - Real-time PCM 16kHz audio streaming                   │
+│  - ~150ms latency for partial transcripts                │
+│  - xi-api-key header required                            │
+│  - Returns: partial_transcript, committed_transcript     │
 └──────────────┬───────────────────────────────────────────┘
                │ Transcription text
                ▼
@@ -215,11 +218,11 @@ The voice-to-form application demonstrates a **well-architected, modern React Na
 ### 2.3 External Service Dependencies
 
 **Critical External APIs:**
-1. **Speech-to-Text:** `https://toolkit.rork.com/stt/transcribe/`
-   - ⚠️ No SLA documented
+1. **Speech-to-Text:** `https://api.elevenlabs.io/v1/scribe`
+   - ✅ ElevenLabs ScribeV2 API
+   - ⚠️ Rate limiting: Check ElevenLabs documentation
    - ⚠️ No fallback STT provider
    - ⚠️ No circuit breaker pattern
-   - ⚠️ Rate limiting unknown
 
 2. **Google Gemini API:** `generativelanguage.googleapis.com`
    - ⚠️ API key in client-side code (`EXPO_PUBLIC_GEMINI_API_KEY`)
@@ -294,9 +297,13 @@ User holds → 2s delay → Record → Stop → Upload → Transcribe → AI Pro
 
 **Current Implementation:**
 ```typescript
-// VoiceRecorder.tsx Line 161-163
-const sttResponse = await fetch('https://toolkit.rork.com/stt/transcribe/', {
+// VoiceRecorder.tsx Line 161-167
+const apiKey = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+const sttResponse = await fetch('https://api.elevenlabs.io/v1/scribe', {
   method: 'POST',
+  headers: {
+    'xi-api-key': apiKey,
+  },
   body: formData,
 });
 ```
@@ -310,8 +317,11 @@ import { CircuitBreaker } from 'cockatiel';
 // 1. Exponential backoff retry
 const transcribeWithRetry = async (formData: FormData) => {
   return await pRetry(
-    () => fetch('https://toolkit.rork.com/stt/transcribe/', {
+    () => fetch('https://api.elevenlabs.io/v1/scribe', {
       method: 'POST',
+      headers: {
+        'xi-api-key': process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY,
+      },
       body: formData,
     }),
     {
@@ -943,11 +953,11 @@ All files               |   18.24 |    12.45 |   15.32 |   18.67 |
    describe('Error Scenarios', () => {
      it('should handle STT service failure gracefully', async () => {
        // Mock STT service to return 500 error
-       mockServer.use(
-         http.post('https://toolkit.rork.com/stt/transcribe/', () => {
-           return HttpResponse.error();
-         })
-       );
+        mockServer.use(
+          http.post('https://api.elevenlabs.io/v1/scribe', () => {
+            return HttpResponse.error();
+          })
+        );
 
        await element(by.id('voiceBtn')).tap();
        // Record and release
@@ -961,9 +971,9 @@ All files               |   18.24 |    12.45 |   15.32 |   18.67 |
 
      it('should handle rate limiting (429 errors)', async () => {
        mockServer.use(
-         http.post('https://toolkit.rork.com/stt/transcribe/', () => {
-           return HttpResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
-         })
+          http.post('https://api.elevenlabs.io/v1/scribe', () => {
+            return HttpResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+          })
        );
 
        await element(by.id('voiceBtn')).tap();
@@ -1059,7 +1069,7 @@ import { setupServer } from 'msw/node';
 
 export const mockServer = setupServer(
   // Mock STT service
-  http.post('https://toolkit.rork.com/stt/transcribe/', async ({ request }) => {
+  http.post('https://api.elevenlabs.io/v1/scribe', async ({ request }) => {
     const formData = await request.formData();
     const audio = formData.get('audio');
 

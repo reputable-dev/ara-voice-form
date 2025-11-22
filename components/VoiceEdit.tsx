@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
+import AudioRecord from 'react-native-audio-record';
 import VoiceEditModal from './VoiceEditModal';
 import { captureException, addBreadcrumb } from '@/lib/sentry';
 
@@ -38,13 +39,33 @@ export default function VoiceEdit({
   const [blurIntensity, setBlurIntensity] = useState<number>(0);
   const [webBlurOpacity, setWebBlurOpacity] = useState<number>(0);
   const [modalPosition, setModalPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  
+  const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [reconnectAttempts, setReconnectAttempts] = useState<number>(0);
+
   const glowAnim = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
   const modalAnim = useRef(new Animated.Value(0)).current;
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const websocketRef = useRef<WebSocket | null>(null);
+  const audioStreamRef = useRef<any>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchPositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Initialize AudioRecord for real-time streaming
+  useEffect(() => {
+    const options = {
+      sampleRate: 16000,  // 16kHz for Scribe v2 Realtime
+      channels: 1,        // Mono
+      bitsPerSample: 16,  // 16-bit PCM
+      audioSource: 6,     // VOICE_COMMUNICATION
+      wavFile: undefined, // No file output, we want raw data
+    };
+
+    AudioRecord.init(options);
+    console.log('VoiceEdit: AudioRecord initialized for real-time streaming');
+  }, []);
 
   useEffect(() => {
     Animated.loop(
@@ -86,6 +107,33 @@ export default function VoiceEdit({
       friction: 10,
     }).start();
   }, [isLongPress, blurAnim, modalAnim]);
+
+  // Cleanup effect for WebSocket and audio resources
+  useEffect(() => {
+    return () => {
+      // Clean up WebSocket
+      if (websocketRef.current) {
+        websocketRef.current.close();
+      }
+
+      if (audioStreamRef.current) {
+        audioStreamRef.current.remove();
+      }
+
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
+
+      // Stop recording if active
+      if (isRecording) {
+        AudioRecord.stop();
+      }
+    };
+  }, [isRecording]);
 
   const startRecording = async () => {
     try {
@@ -148,118 +196,305 @@ export default function VoiceEdit({
     }
   };
 
-  const transcribeAndEdit = async (uri: string) => {
-    try {
-      console.log('VoiceEdit: Transcribing from:', uri);
-      setTranscriptionText('Transcribing...');
+  const connectWebSocket = async (isReconnect = false): Promise<WebSocket> => {
+    const apiKey = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+    if (!apiKey) {
+      throw new Error('EXPO_PUBLIC_ELEVENLABS_API_KEY is not configured. Please add it to your .env file.');
+    }
 
-      const formData = new FormData();
+    if (isReconnect) {
+      setReconnectAttempts(prev => prev + 1);
+    } else {
+      setReconnectAttempts(0);
+    }
 
-      if (Platform.OS === 'web') {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        formData.append('audio', blob, 'recording.webm');
-      } else {
-        const uriParts = uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
+    setConnectionState('connecting');
 
-        const audioFile = {
-          uri,
-          name: `recording.${fileType}`,
-          type: `audio/${fileType}`,
-        } as any;
+    // Clean up existing connection
+    if (websocketRef.current) {
+      websocketRef.current.close();
+      websocketRef.current = null;
+    }
 
-        formData.append('audio', audioFile);
-      }
+    const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&audio_format=pcm_16000&include_timestamps=false`;
 
-      const sttResponse = await fetch('https://toolkit.rork.com/stt/transcribe/', {
-        method: 'POST',
-        body: formData,
+    return new Promise<WebSocket>((resolve, reject) => {
+      const ws = new WebSocket(wsUrl, [], {
+        headers: {
+          'xi-api-key': apiKey,
+        },
       });
 
-      if (!sttResponse.ok) {
-        const errorText = await sttResponse.text();
-        console.error('VoiceEdit: STT error:', sttResponse.status, errorText);
-        
-        if (sttResponse.status === 429) {
-          Alert.alert('Rate Limit', 'Too many requests. Please wait a moment and try again.');
-          handleCancel();
-          return;
-        }
-        
-        throw new Error(`Transcription failed: ${sttResponse.status}`);
-      }
+      // Connection timeout (10 seconds)
+      connectionTimeoutRef.current = setTimeout(() => {
+        ws.close();
+        reject(new Error('WebSocket connection timeout'));
+      }, 10000);
 
-      const responseText = await sttResponse.text();
-      console.log('VoiceEdit: Raw response:', responseText);
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('VoiceEdit: Failed to parse JSON:', parseError);
-        throw new Error('Invalid response from transcription service');
-      }
-      
-      console.log('VoiceEdit: Parsed data:', JSON.stringify(data, null, 2));
-      console.log('VoiceEdit: Data keys:', Object.keys(data));
+      ws.onopen = () => {
+        console.log('VoiceEdit: WebSocket connected to ElevenLabs ScribeV2 Realtime');
+        clearTimeout(connectionTimeoutRef.current!);
+        setConnectionState('connected');
+        setReconnectAttempts(0);
+        websocketRef.current = ws;
+        resolve(ws);
+      };
 
-      if (data && data.text !== undefined) {
-        if (data.text.trim() === '') {
-          Alert.alert('No Speech', 'No speech detected. Please try again.');
-          handleCancel();
-          return;
-        }
-        
-        setTranscriptionText(data.text);
-        
-        setTranscriptionText('Applying edit...');
-        
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
+      ws.onmessage = (event) => {
         try {
-          const processedText = await processSmartEdit(value, data.text, fieldName);
-          onValueChange(processedText);
-          setTranscriptionText('Edit applied!');
-        } catch (editError) {
-          console.error('VoiceEdit: Edit failed', editError);
-          captureException(editError instanceof Error ? editError : new Error('Smart edit failed'), {
-            context: 'processSmartEdit',
-            fieldName,
-            transcriptionText: data.text,
-            currentValueLength: value.length,
-          });
-          setTranscriptionText('Edit failed');
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        } catch (error) {
+          console.error('VoiceEdit: Failed to parse WebSocket message:', error);
         }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        handleCancel();
-      } else {
-        console.error('VoiceEdit: No text field in response. Full data:', data);
-        throw new Error('No transcription text received');
+      };
+
+      ws.onerror = (error) => {
+        console.error('VoiceEdit: WebSocket error:', error);
+        setConnectionState('error');
+        clearTimeout(connectionTimeoutRef.current!);
+        reject(error);
+      };
+
+      ws.onclose = (event) => {
+        console.log('VoiceEdit: WebSocket closed:', event.code, event.reason);
+        clearTimeout(connectionTimeoutRef.current!);
+        websocketRef.current = null;
+        setConnectionState('disconnected');
+
+        // Attempt reconnection if we were recording and it's not a normal close
+        if (isRecording && event.code !== 1000 && reconnectAttempts < 3) {
+          console.log(`VoiceEdit: Attempting reconnection (${reconnectAttempts + 1}/3)...`);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectWebSocket(true).catch(err => {
+              console.error('VoiceEdit: Reconnection failed:', err);
+            });
+          }, Math.min(1000 * Math.pow(2, reconnectAttempts), 5000)); // Exponential backoff
+        }
+      };
+    });
+  };
+
+  const handleWebSocketMessage = (data: any) => {
+    try {
+      switch (data.message_type) {
+        case 'session_started':
+          console.log('VoiceEdit: ElevenLabs session started:', data);
+          break;
+
+        case 'partial_transcript':
+          const partialText = data.text || '';
+          if (partialText.trim()) {
+            setTranscriptionText(partialText);
+            console.log('VoiceEdit: Partial transcript:', partialText);
+          }
+          break;
+
+        case 'committed_transcript':
+          const committedText = data.text || '';
+          console.log('VoiceEdit: Committed transcript:', committedText);
+          if (committedText.trim()) {
+            setTranscriptionText(committedText);
+            // Auto-accept the transcription for VoiceEdit
+            handleAccept(committedText);
+          }
+          break;
+
+        case 'error':
+        case 'auth_error':
+          console.error('VoiceEdit: ElevenLabs authentication error:', data);
+          Alert.alert('Authentication Error', 'Please check your ElevenLabs API key configuration.');
+          handleCancel();
+          break;
+
+        case 'quota_exceeded':
+          console.error('VoiceEdit: ElevenLabs quota exceeded:', data);
+          Alert.alert('Quota Exceeded', 'You have exceeded your ElevenLabs API quota. Please check your usage limits.');
+          handleCancel();
+          break;
+
+        case 'transcriber_error':
+          console.error('VoiceEdit: ElevenLabs transcription error:', data);
+          Alert.alert('Transcription Error', 'Unable to transcribe audio. Please try again.');
+          handleCancel();
+          break;
+
+        case 'input_error':
+          console.error('VoiceEdit: ElevenLabs input error:', data);
+          Alert.alert('Audio Error', 'Invalid audio format. Please check your microphone settings.');
+          handleCancel();
+          break;
+
+        default:
+          console.log('VoiceEdit: Unknown message type:', data.message_type, data);
       }
     } catch (error) {
-      console.error('VoiceEdit: Error processing:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process';
+      console.error('VoiceEdit: Error handling WebSocket message:', error);
+    }
+  };
 
-      captureException(error instanceof Error ? error : new Error('Voice edit processing failed'), {
+  const transcribeAndEdit = async (uri: string) => {
+    try {
+      console.log('VoiceEdit: Starting real-time transcription');
+      setTranscriptionText('Connecting...');
+
+      // Try to connect to ElevenLabs WebSocket with timeout
+      let wsConnected = false;
+      try {
+        await Promise.race([
+          connectWebSocket(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('WebSocket connection timeout')), 8000)
+          )
+        ]);
+        wsConnected = true;
+        console.log('VoiceEdit: WebSocket connected successfully');
+      } catch (wsError) {
+        console.warn('VoiceEdit: WebSocket connection failed, falling back to file-based transcription:', wsError);
+        wsConnected = false;
+      }
+
+      if (wsConnected) {
+        // Use real-time streaming
+        console.log('VoiceEdit: Starting real-time audio streaming');
+
+        // Start AudioRecord for real-time streaming
+        AudioRecord.start();
+
+        // Set up audio data listener
+        audioStreamRef.current = AudioRecord.on('data', (data: any) => {
+          if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+            try {
+              // Convert audio data to base64 and send to WebSocket
+              const base64Audio = data.toString('base64');
+              websocketRef.current.send(JSON.stringify({
+                message_type: 'input_audio_chunk',
+                audio_base_64: base64Audio,
+                commit: false,
+                sample_rate: 16000,
+              }));
+            } catch (error) {
+              console.error('VoiceEdit: Error sending audio chunk:', error);
+            }
+          }
+        });
+
+        // Wait for transcription to complete or timeout
+        setTimeout(async () => {
+          if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+            websocketRef.current.send(JSON.stringify({
+              message_type: 'input_audio_chunk',
+              audio_base_64: '',
+              commit: true,
+              sample_rate: 16000,
+            }));
+          }
+
+          // Stop recording and close connection
+          AudioRecord.stop();
+          if (audioStreamRef.current) {
+            audioStreamRef.current.remove();
+            audioStreamRef.current = null;
+          }
+
+          setTimeout(() => {
+            if (websocketRef.current) {
+              websocketRef.current.close();
+            }
+            setIsProcessing(false);
+          }, 2000);
+        }, 10000); // Record for 10 seconds max
+
+      } else {
+        // Fallback to regular ScribeV2 API
+        console.log('VoiceEdit: Using fallback transcription with regular ScribeV2 API');
+        setTranscriptionText('Transcribing...');
+
+        const formData = new FormData();
+
+        if (Platform.OS === 'web') {
+          const response = await fetch(uri);
+          const blob = await response.blob();
+          formData.append('audio', blob, 'recording.webm');
+        } else {
+          const uriParts = uri.split('.');
+          const fileType = uriParts[uriParts.length - 1];
+
+          const audioFile = {
+            uri,
+            name: `recording.${fileType}`,
+            type: `audio/${fileType}`,
+          } as any;
+
+          formData.append('audio', audioFile);
+        }
+
+        const apiKey = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+        if (!apiKey) {
+          throw new Error('EXPO_PUBLIC_ELEVENLABS_API_KEY is not configured. Please add it to your .env file.');
+        }
+
+        const sttResponse = await fetch('https://api.elevenlabs.io/v1/scribe', {
+          method: 'POST',
+          headers: {
+            'xi-api-key': apiKey,
+          },
+          body: formData,
+        });
+
+        if (!sttResponse.ok) {
+          const errorText = await sttResponse.text();
+          console.error('VoiceEdit: STT error:', sttResponse.status, errorText);
+
+          if (sttResponse.status === 429) {
+            Alert.alert('Rate Limit', 'Too many requests. Please wait a moment and try again.');
+            handleCancel();
+            return;
+          }
+
+          throw new Error(`Transcription failed: ${sttResponse.status}`);
+        }
+
+        const responseText = await sttResponse.text();
+        console.log('VoiceEdit: Raw response:', responseText);
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('VoiceEdit: Failed to parse JSON:', parseError);
+          throw new Error('Invalid response from transcription service');
+        }
+
+        console.log('VoiceEdit: Parsed response:', data);
+
+        if (data && data.text) {
+          const transcription = data.text.trim();
+          console.log('VoiceEdit: Transcription result:', transcription);
+
+          if (transcription === '') {
+            console.warn('VoiceEdit: Received empty transcription');
+            Alert.alert('No Speech Detected', 'No speech was detected in the recording. Please try again.');
+            handleCancel();
+            return;
+          }
+
+          setTranscriptionText(transcription);
+          // Auto-accept for VoiceEdit (no modal needed)
+          handleAccept(transcription);
+        } else {
+          console.error('VoiceEdit: No text field in response');
+          throw new Error('No transcription text received');
+        }
+      }
+    } catch (error) {
+      console.error('VoiceEdit: Transcription error:', error);
+      captureException(error instanceof Error ? error : new Error('Transcription failed'), {
         context: 'transcribeAndEdit',
         fieldName,
         audioUri: uri,
-        errorMessage,
-        isRateLimit: errorMessage.includes('429'),
       });
-
-      addBreadcrumb('Voice edit failed', 'error', {
-        fieldName,
-        errorType: errorMessage.includes('429') ? 'rate_limit' : 'processing_error',
-      });
-
-      if (errorMessage.includes('429')) {
-        Alert.alert('Rate Limit', 'Too many requests. Please wait a moment and try again.');
-      } else {
-        Alert.alert('Error', 'Failed to process voice edit. Please try again.');
-      }
+      Alert.alert('Error', 'Failed to transcribe audio. Please try again.');
       handleCancel();
     }
   };

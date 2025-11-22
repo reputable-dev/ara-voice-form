@@ -258,9 +258,9 @@ API keys have been moved to environment variables for security. Follow these ste
    # Required: tRPC backend URL
    EXPO_PUBLIC_RORK_API_BASE_URL=http://localhost:3000
 
-   # Required: Google Gemini API Key
-   # Get your key at: https://ai.google.dev/
-   EXPO_PUBLIC_GEMINI_API_KEY=your_actual_api_key_here
+   # Required: OpenRouter API Key
+   # Get your key at: https://openrouter.ai/
+   OPENROUTER_API_KEY=your_actual_api_key_here
 
    # Optional: Custom Rork project ID (default in package.json)
    RORK_PROJECT_ID=fhwpveo9srinxla5renne
@@ -385,12 +385,28 @@ Access the floating AI assistant:
 const formData = new FormData();
 formData.append('audio', audioFile);
 
-const response = await fetch('https://toolkit.rork.com/stt/transcribe/', {
-  method: 'POST',
-  body: formData,
+// ElevenLabs ScribeV2 Realtime (WebSocket streaming)
+const ws = new WebSocket('wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&audio_format=pcm_16000', {
+  headers: {
+    'xi-api-key': process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY,
+  },
 });
 
-const { text } = await response.json();
+// Send audio chunks in real-time
+ws.send(JSON.stringify({
+  message_type: 'input_audio_chunk',
+  audio_base_64: base64AudioData,
+  commit: false,
+  sample_rate: 16000,
+}));
+
+// Receive real-time transcripts
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.message_type === 'partial_transcript') {
+    console.log('Partial:', data.text); // Real-time updates
+  }
+};
 ```
 
 [ref: components/VoiceEdit.tsx:145-192 - STT implementation]
@@ -630,7 +646,7 @@ Configure different environments in `eas.json`:
 **Environment Configuration:**
 ```bash
 # Required in .env file
-EXPO_PUBLIC_GEMINI_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here
 EXPO_PUBLIC_SENTRY_DSN=your_sentry_dsn_here
 ```
 

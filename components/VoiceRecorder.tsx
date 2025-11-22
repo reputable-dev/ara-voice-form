@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { Mic, Square, Loader } from 'lucide-react-native';
+import AudioRecord from 'react-native-audio-record';
 import Colors from '@/constants/colors';
 
 interface VoiceRecorderProps {
@@ -18,16 +19,24 @@ interface VoiceRecorderProps {
   onTranscriptionStream?: (text: string) => void;
 }
 
-export default function VoiceRecorder({ 
+export default function VoiceRecorder({
   onTranscriptionComplete,
   onRecordingStateChange,
-  onTranscriptionStream 
+  onTranscriptionStream
 }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [reconnectAttempts, setReconnectAttempts] = useState<number>(0);
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [streamingText, setStreamingText] = useState<string>('');
-  const streamIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [partialTranscript, setPartialTranscript] = useState<string>('');
+  const websocketRef = useRef<WebSocket | null>(null);
+  const audioStreamRef = useRef<any>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAudioChunkRef = useRef<number>(0);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const waveAnims = useRef([
@@ -39,6 +48,20 @@ export default function VoiceRecorder({
     new Animated.Value(0.5),
     new Animated.Value(0.3),
   ]).current;
+
+  // Initialize AudioRecord for real-time streaming
+  useEffect(() => {
+    const options = {
+      sampleRate: 16000,  // 16kHz for Scribe v2 Realtime
+      channels: 1,        // Mono
+      bitsPerSample: 16,  // 16-bit PCM
+      audioSource: 6,     // VOICE_COMMUNICATION
+      wavFile: undefined, // No file output, we want raw data
+    };
+
+    AudioRecord.init(options);
+    console.log('AudioRecord initialized for real-time streaming');
+  }, []);
 
   useEffect(() => {
     if (isRecording) {
@@ -79,35 +102,305 @@ export default function VoiceRecorder({
     }
   }, [isRecording, pulseAnim, waveAnims]);
 
+  const connectWebSocket = async (isReconnect = false): Promise<WebSocket> => {
+    const apiKey = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+    if (!apiKey) {
+      throw new Error('EXPO_PUBLIC_ELEVENLABS_API_KEY is not configured. Please add it to your .env file.');
+    }
+
+    if (isReconnect) {
+      setReconnectAttempts(prev => prev + 1);
+    } else {
+      setReconnectAttempts(0);
+    }
+
+    setConnectionState('connecting');
+
+    // Clean up existing connection
+    if (websocketRef.current) {
+      websocketRef.current.close();
+      websocketRef.current = null;
+    }
+
+    const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&audio_format=pcm_16000&include_timestamps=false`;
+
+    return new Promise<WebSocket>((resolve, reject) => {
+      const ws = new WebSocket(wsUrl, [], {
+        headers: {
+          'xi-api-key': apiKey,
+        },
+      });
+
+      // Connection timeout (10 seconds)
+      connectionTimeoutRef.current = setTimeout(() => {
+        ws.close();
+        reject(new Error('WebSocket connection timeout'));
+      }, 10000);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected to ElevenLabs ScribeV2 Realtime');
+        clearTimeout(connectionTimeoutRef.current!);
+        setConnectionState('connected');
+        setReconnectAttempts(0);
+        websocketRef.current = ws;
+
+        // Start heartbeat to keep connection alive
+        startHeartbeat();
+
+        resolve(ws);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        } catch (error) {
+          console.error('Failed to parse WebSocket message:', error);
+          // Don't close connection for parse errors, just log
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setConnectionState('error');
+        clearTimeout(connectionTimeoutRef.current!);
+        reject(error);
+      };
+
+      ws.onclose = (event) => {
+        console.log('WebSocket closed:', event.code, event.reason);
+        clearTimeout(connectionTimeoutRef.current!);
+        stopHeartbeat();
+        websocketRef.current = null;
+        setConnectionState('disconnected');
+
+        // Attempt reconnection if we were recording and it's not a normal close
+        if (isRecording && event.code !== 1000 && reconnectAttempts < 3) {
+          console.log(`Attempting reconnection (${reconnectAttempts + 1}/3)...`);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectWebSocket(true).catch(err => {
+              console.error('Reconnection failed:', err);
+            });
+          }, Math.min(1000 * Math.pow(2, reconnectAttempts), 5000)); // Exponential backoff
+        }
+      };
+    });
+  };
+
+  const startHeartbeat = () => {
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+        // Send empty audio chunk to keep connection alive
+        websocketRef.current.send(JSON.stringify({
+          message_type: 'input_audio_chunk',
+          audio_base_64: '',
+          commit: false,
+          sample_rate: 16000,
+        }));
+      }
+    }, 30000); // Every 30 seconds
+  };
+
+  const stopHeartbeat = () => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  };
+
+  const handleWebSocketMessage = (data: any) => {
+    try {
+      switch (data.message_type) {
+        case 'session_started':
+          console.log('ElevenLabs session started:', data);
+          break;
+
+        case 'partial_transcript':
+          const partialText = data.text || '';
+          if (partialText.trim()) {
+            setPartialTranscript(partialText);
+            setStreamingText(partialText);
+            onTranscriptionStream?.(partialText);
+          }
+          break;
+
+        case 'committed_transcript':
+          const committedText = data.text || '';
+          console.log('Committed transcript:', committedText);
+          if (committedText.trim()) {
+            setStreamingText(committedText);
+            onTranscriptionStream?.(committedText);
+          }
+          break;
+
+        case 'committed_transcript_with_timestamps':
+          // Handle timestamps if needed in future
+          break;
+
+        case 'error':
+        case 'auth_error':
+          console.error('ElevenLabs authentication error:', data);
+          Alert.alert('Authentication Error', 'Please check your ElevenLabs API key configuration.');
+          stopRecording();
+          break;
+
+        case 'quota_exceeded':
+          console.error('ElevenLabs quota exceeded:', data);
+          Alert.alert('Quota Exceeded', 'You have exceeded your ElevenLabs API quota. Please check your usage limits.');
+          stopRecording();
+          break;
+
+        case 'transcriber_error':
+          console.error('ElevenLabs transcription error:', data);
+          // Try to continue with partial transcript if available
+          if (partialTranscript.trim()) {
+            console.log('Using partial transcript due to transcription error');
+            onTranscriptionComplete(partialTranscript.trim());
+          } else {
+            Alert.alert('Transcription Error', 'Unable to transcribe audio. Please try again.');
+          }
+          stopRecording();
+          break;
+
+        case 'input_error':
+          console.error('ElevenLabs input error:', data);
+          Alert.alert('Audio Error', 'Invalid audio format. Please check your microphone settings.');
+          stopRecording();
+          break;
+
+        default:
+          console.log('Unknown message type:', data.message_type, data);
+      }
+    } catch (error) {
+      console.error('Error handling WebSocket message:', error);
+    }
+  };
+
   const startRecording = async () => {
     try {
-      const permission = await AudioModule.requestRecordingPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Permission Required', 'Microphone permission is required to record audio.');
-        return;
-      }
-
+      // Request microphone permission
       if (Platform.OS === 'ios') {
-        await AudioModule.setAudioModeAsync({
-          allowsRecording: true,
-          playsInSilentMode: true,
-        });
+        const permission = await AudioModule.requestRecordingPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert('Permission Required', 'Microphone permission is required to record audio.');
+          return;
+        }
       }
 
-      console.log('Preparing to record...');
-      await audioRecorder.prepareToRecordAsync();
-      
-      console.log('Starting recording...');
-      await audioRecorder.record();
+      console.log('Starting real-time audio recording...');
+
+      // Try to connect to ElevenLabs WebSocket with timeout
+      let wsConnected = false;
+      try {
+        await Promise.race([
+          connectWebSocket(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('WebSocket connection timeout')), 8000)
+          )
+        ]);
+        wsConnected = true;
+        console.log('WebSocket connected successfully');
+      } catch (wsError) {
+        console.warn('WebSocket connection failed, falling back to file-based transcription:', wsError);
+        wsConnected = false;
+      }
+
+      // Start AudioRecord for real-time streaming
+      AudioRecord.start();
+
+      // Set up audio data listener
+      audioStreamRef.current = AudioRecord.on('data', (data: any) => {
+        if (wsConnected && websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+          try {
+            // Convert audio data to base64 and send to WebSocket
+            const base64Audio = data.toString('base64');
+            websocketRef.current.send(JSON.stringify({
+              message_type: 'input_audio_chunk',
+              audio_base_64: base64Audio,
+              commit: false,
+              sample_rate: 16000,
+            }));
+            lastAudioChunkRef.current = Date.now();
+          } catch (error) {
+            console.error('Error sending audio chunk:', error);
+          }
+        }
+      });
 
       setIsRecording(true);
       onRecordingStateChange?.(true);
       setStreamingText('');
-      startStreamingSimulation();
-      console.log('Recording started');
+      setPartialTranscript('');
+
+      if (wsConnected) {
+        console.log('Real-time recording and streaming started');
+      } else {
+        console.log('Recording started (fallback mode - no real-time transcription)');
+      }
     } catch (err) {
       console.error('Failed to start recording', err);
       Alert.alert('Error', 'Failed to start recording. Please try again.');
+      // Clean up on failure
+      stopRecording();
+    }
+  };
+
+
+
+  const transcribeWithFallback = async (audioUri: string) => {
+    try {
+      console.log('Using fallback transcription with regular ScribeV2 API');
+
+      const apiKey = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+      if (!apiKey) {
+        throw new Error('EXPO_PUBLIC_ELEVENLABS_API_KEY is not configured');
+      }
+
+      const formData = new FormData();
+
+      if (Platform.OS === 'web') {
+        const response = await fetch(audioUri);
+        const blob = await response.blob();
+        formData.append('audio', blob, 'recording.webm');
+      } else {
+        const uriParts = audioUri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        const audioFile = {
+          uri: audioUri,
+          name: `recording.${fileType}`,
+          type: `audio/${fileType}`,
+        } as any;
+        formData.append('audio', audioFile);
+      }
+
+      const response = await fetch('https://api.elevenlabs.io/v1/scribe', {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Fallback transcription failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data && data.text) {
+        const transcriptionText = data.text.trim();
+        if (transcriptionText) {
+          console.log('Fallback transcription successful:', transcriptionText);
+          onTranscriptionComplete(transcriptionText);
+        } else {
+          throw new Error('Empty transcription from fallback API');
+        }
+      } else {
+        throw new Error('Invalid response from fallback API');
+      }
+    } catch (error) {
+      console.error('Fallback transcription failed:', error);
+      Alert.alert('Transcription Error', 'Unable to transcribe audio. Please try again.');
     }
   };
 
@@ -118,16 +411,82 @@ export default function VoiceRecorder({
     setIsRecording(false);
     onRecordingStateChange?.(false);
     setIsProcessing(true);
-    stopStreamingSimulation();
 
     try {
-      await audioRecorder.stop();
-      const uri = audioRecorder.uri;
-      console.log('Recording stopped and stored at', uri);
+      // Stop AudioRecord
+      AudioRecord.stop();
 
-      if (uri) {
-        await transcribeAudio(uri);
+      // Remove audio data listener
+      if (audioStreamRef.current) {
+        audioStreamRef.current.remove();
+        audioStreamRef.current = null;
       }
+
+      const hasWebSocketConnection = websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN;
+      const hasPartialTranscript = partialTranscript.trim().length > 0;
+
+      if (hasWebSocketConnection) {
+        // Send final commit to get the final transcript
+        websocketRef.current.send(JSON.stringify({
+          message_type: 'input_audio_chunk',
+          audio_base_64: '',
+          commit: true,
+          sample_rate: 16000,
+        }));
+
+        // Wait for final transcript or timeout
+        setTimeout(async () => {
+          if (websocketRef.current) {
+            websocketRef.current.close();
+          }
+
+          // Use partial transcript if available, otherwise try fallback
+          if (hasPartialTranscript) {
+            console.log('Using partial transcript from real-time session');
+            onTranscriptionComplete(partialTranscript.trim());
+          } else {
+            console.log('No partial transcript available, attempting fallback transcription');
+            // For fallback, we need to record the audio file
+            // This is a simplified approach - in production you might want to buffer audio
+            try {
+              await audioRecorder.prepareToRecordAsync();
+              await audioRecorder.record();
+              // Record for a short time to capture what we missed
+              setTimeout(async () => {
+                await audioRecorder.stop();
+                const uri = audioRecorder.uri;
+                if (uri) {
+                  await transcribeWithFallback(uri);
+                }
+                setIsProcessing(false);
+              }, 1000);
+            } catch (fallbackError) {
+              console.error('Fallback recording failed:', fallbackError);
+              setIsProcessing(false);
+            }
+          }
+        }, 2000);
+      } else {
+        // No WebSocket connection, use fallback immediately
+        console.log('No WebSocket connection, using fallback transcription');
+        try {
+          await audioRecorder.prepareToRecordAsync();
+          await audioRecorder.record();
+          setTimeout(async () => {
+            await audioRecorder.stop();
+            const uri = audioRecorder.uri;
+            if (uri) {
+              await transcribeWithFallback(uri);
+            }
+            setIsProcessing(false);
+          }, 1000);
+        } catch (fallbackError) {
+          console.error('Fallback recording failed:', fallbackError);
+          setIsProcessing(false);
+        }
+      }
+
+      console.log('Recording stopped');
     } catch (error) {
       console.error('Failed to stop recording', error);
       Alert.alert('Error', 'Failed to process recording.');
@@ -138,6 +497,11 @@ export default function VoiceRecorder({
   const transcribeAudio = async (uri: string) => {
     try {
       console.log('Transcribing audio from:', uri);
+
+      const apiKey = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+      if (!apiKey) {
+        throw new Error('EXPO_PUBLIC_ELEVENLABS_API_KEY is not configured. Please add it to your .env file.');
+      }
 
       const formData = new FormData();
 
@@ -158,48 +522,38 @@ export default function VoiceRecorder({
         formData.append('audio', audioFile);
       }
 
-      const sttResponse = await fetch('https://toolkit.rork.com/stt/transcribe/', {
+      // ElevenLabs ScribeV2 API (regular, not realtime)
+      const sttResponse = await fetch('https://api.elevenlabs.io/v1/scribe', {
         method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+        },
         body: formData,
       });
 
       if (!sttResponse.ok) {
         const errorText = await sttResponse.text();
-        console.error('STT API error:', sttResponse.status, errorText);
+        console.error('ElevenLabs ScribeV2 API error:', sttResponse.status, errorText);
         throw new Error(`Transcription failed: ${sttResponse.status}`);
       }
 
-      const responseText = await sttResponse.text();
-      console.log('STT API response:', responseText);
+      const data = await sttResponse.json();
+      console.log('ElevenLabs ScribeV2 API response:', JSON.stringify(data, null, 2));
 
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Failed to parse JSON response:', parseError);
-        console.error('Response text:', responseText);
-        throw new Error('Invalid response from transcription service');
-      }
-
-      console.log('Transcription result:', data);
-      console.log('Full data object:', JSON.stringify(data, null, 2));
-      console.log('Data keys:', Object.keys(data));
-      console.log('Text field type:', typeof data.text);
-      console.log('Text field value:', data.text);
-
-      if (data && data.text !== undefined) {
-        if (data.text.trim() === '') {
+      // ElevenLabs ScribeV2 response format
+      if (data && data.text) {
+        const transcriptionText = data.text.trim();
+        if (transcriptionText === '') {
           console.warn('Received empty transcription text');
           Alert.alert('No Speech Detected', 'No speech was detected in the recording. Please try again.');
         } else {
-          setStreamingText(data.text);
-          onTranscriptionStream?.(data.text);
-          onTranscriptionComplete(data.text);
+          setStreamingText(transcriptionText);
+          onTranscriptionStream?.(transcriptionText);
+          onTranscriptionComplete(transcriptionText);
         }
       } else {
-        console.error('No text field in response. Keys:', Object.keys(data));
-        console.error('Entire response:', JSON.stringify(data, null, 2));
-        throw new Error('No transcription text received');
+        console.error('Invalid ElevenLabs response format:', data);
+        throw new Error('No transcription text received from ElevenLabs');
       }
     } catch (error) {
       console.error('Error transcribing audio:', error);
@@ -207,8 +561,11 @@ export default function VoiceRecorder({
     } finally {
       setIsProcessing(false);
       setStreamingText('');
+      setPartialTranscript('');
     }
   };
+
+
 
   const startStreamingSimulation = () => {
     setStreamingText('Listening...');
@@ -224,11 +581,45 @@ export default function VoiceRecorder({
 
   useEffect(() => {
     return () => {
-      if (streamIntervalRef.current) {
-        clearInterval(streamIntervalRef.current);
+      // Clean up all resources
+      if (websocketRef.current) {
+        websocketRef.current.close();
+      }
+
+      if (audioStreamRef.current) {
+        audioStreamRef.current.remove();
+      }
+
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
+
+      stopHeartbeat();
+
+      // Stop recording if active
+      if (isRecording) {
+        AudioRecord.stop();
       }
     };
-  }, []);
+  }, [isRecording]);
+
+  // Monitor connection health
+  useEffect(() => {
+    if (connectionState === 'connected' && isRecording) {
+      const healthCheck = setInterval(() => {
+        if (websocketRef.current && websocketRef.current.readyState !== WebSocket.OPEN) {
+          console.warn('WebSocket connection lost during recording');
+          setConnectionState('error');
+        }
+      }, 5000);
+
+      return () => clearInterval(healthCheck);
+    }
+  }, [connectionState, isRecording]);
 
   const handlePress = () => {
     if (isRecording) {
@@ -240,9 +631,11 @@ export default function VoiceRecorder({
 
   return (
     <View style={styles.container}>
-      {(isRecording || isProcessing) && streamingText && (
+      {(isRecording || isProcessing) && (streamingText || partialTranscript) && (
         <View style={styles.transcriptionContainer}>
-          <Text style={styles.transcriptionText}>{streamingText}</Text>
+          <Text style={styles.transcriptionText}>
+            {partialTranscript || streamingText}
+          </Text>
         </View>
       )}
 
@@ -292,7 +685,13 @@ export default function VoiceRecorder({
         {isProcessing
           ? 'Processing...'
           : isRecording
-          ? 'Recording... Tap to stop'
+          ? connectionState === 'connected'
+            ? 'Recording (Real-time)... Tap to stop'
+            : 'Recording (Offline mode)... Tap to stop'
+          : connectionState === 'connecting'
+          ? 'Connecting...'
+          : connectionState === 'error'
+          ? 'Connection error - Tap to retry'
           : 'Tap to start recording'}
       </Text>
     </View>

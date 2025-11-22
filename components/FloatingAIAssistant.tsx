@@ -128,86 +128,58 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
     setShowSourceEditor(false);
   }, [contractData, sourceText]);
 
-  const callGeminiAPI = useCallback(async (messages: Message[]): Promise<string> => {
+  const callOpenRouterAPI = useCallback(async (messages: Message[]): Promise<string> => {
     try {
-      const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+      const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
-        throw new Error('EXPO_PUBLIC_GEMINI_API_KEY is not configured. Please add it to your .env file.');
+        throw new Error('EXPO_PUBLIC_OPENROUTER_API_KEY is not configured. Please add it to your .env file.');
       }
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
-      
-      // Convert messages to Gemini format
-      const geminiMessages = messages.map(msg => {
-        const parts: any[] = [];
-        
-        if (msg.content) {
-          parts.push({ text: msg.content });
-        }
-        
+      const url = 'https://openrouter.ai/api/v1/chat/completions';
+
+      // Convert messages to OpenRouter format (text-only for now, images not supported)
+      const openRouterMessages = messages.map(msg => {
+        // Skip messages with images for now since OpenRouter vision support varies by model
         if (msg.images && msg.images.length > 0) {
-          msg.images.forEach(img => {
-            if (img.base64) {
-              parts.push({
-                inline_data: {
-                  mime_type: img.mimeType,
-                  data: img.base64
-                }
-              });
-            }
-          });
+          return {
+            role: msg.role,
+            content: `${msg.content || ''}\n\n[Image content not supported with current OpenRouter model]`
+          };
         }
-        
+
         return {
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts
+          role: msg.role,
+          content: msg.content || ''
         };
       });
-      
+
       const requestBody = {
-        contents: geminiMessages,
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-          },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-          }
-        ]
+        model: 'anthropic/claude-3-haiku', // Fast and cost-effective model
+        messages: openRouterMessages,
+        temperature: 0.7,
+        max_tokens: 1024,
       };
-      
-      console.log('Sending request to Gemini API:', JSON.stringify(requestBody, null, 2));
-      
+
+      console.log('Sending request to OpenRouter API:', JSON.stringify(requestBody, null, 2));
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.EXPO_PUBLIC_OPENROUTER_HTTP_REFERER || '', // Optional: for rankings
+          'X-Title': process.env.EXPO_PUBLIC_OPENROUTER_X_TITLE || '', // Optional: for rankings
         },
         body: JSON.stringify(requestBody),
       });
-      
+
       const responseText = await response.text();
-      
+
       if (!response.ok) {
-        console.error('Gemini API error:', response.status, responseText);
+        console.error('OpenRouter API error:', response.status, responseText);
         throw new Error(`API request failed: ${response.status}`);
       }
-      
+
+
       let data;
       try {
         data = JSON.parse(responseText);
@@ -215,19 +187,20 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
         console.error('Failed to parse response:', responseText);
         throw new Error('Invalid JSON response from API');
       }
-      console.log('Gemini API response:', JSON.stringify(data, null, 2));
-      
-      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        return data.candidates[0].content.parts[0].text;
+      console.log('OpenRouter API response:', JSON.stringify(data, null, 2));
+
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        return data.choices[0].message.content;
       } else {
-        throw new Error('Invalid response format from Gemini API');
+        throw new Error('Invalid response format from OpenRouter API');
       }
     } catch (error) {
-      console.error('Error calling Gemini API:', error);
-      captureException(error instanceof Error ? error : new Error('Gemini API call failed'), {
-        context: 'callGeminiAPI',
+      console.error('Error calling OpenRouter API:', error);
+      captureException(error instanceof Error ? error : new Error('OpenRouter API call failed'), {
+        context: 'callOpenRouterAPI',
         messageCount: messages.length,
-        apiEndpoint: 'generativelanguage.googleapis.com',
+        apiEndpoint: 'openrouter.ai',
+
       });
       throw error;
     }
@@ -264,7 +237,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
         conversationHistory.unshift(systemMessage);
       }
       
-      const aiResponseText = await callGeminiAPI(conversationHistory);
+      const aiResponseText = await callOpenRouterAPI(conversationHistory);
       
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
@@ -296,7 +269,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
     } finally {
       setIsTyping(false);
     }
-  }, [inputText, selectedImages, messages, contractData, sourceText, callGeminiAPI]);
+  }, [inputText, selectedImages, messages, contractData, sourceText, callOpenRouterAPI]);
 
   const pickImage = useCallback(async (useCamera: boolean = false) => {
     try {

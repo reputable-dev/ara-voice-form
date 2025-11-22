@@ -239,8 +239,8 @@ describe('VoiceFillScreen Component', () => {
   });
 
   it('handles missing API key', async () => {
-    const originalEnv = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-    delete process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    const originalEnv = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
+    delete process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
 
     const { getByTestId } = render(<VoiceFillScreen />);
 
@@ -260,7 +260,7 @@ describe('VoiceFillScreen Component', () => {
 
     // Restore env
     if (originalEnv) {
-      process.env.EXPO_PUBLIC_GEMINI_API_KEY = originalEnv;
+      process.env.EXPO_PUBLIC_OPENROUTER_API_KEY = originalEnv;
     }
   });
 

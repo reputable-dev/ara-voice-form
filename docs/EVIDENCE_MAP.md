@@ -149,8 +149,8 @@ graph TD
 
 | Service | Endpoint | Purpose | Evidence |
 |---------|----------|---------|----------|
-| **Rork STT** | https://toolkit.rork.com/stt/transcribe/ | Speech-to-text transcription | components/VoiceEdit.tsx:164 |
-| **Google Gemini** | https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent | AI text generation, vision | components/FloatingAIAssistant.tsx:128 |
+| **ElevenLabs ScribeV2 Realtime** | wss://api.elevenlabs.io/v1/speech-to-text/realtime | Real-time streaming transcription (~150ms latency) | components/VoiceRecorder.tsx:86 |
+| **OpenRouter** | https://openrouter.ai/api/v1/chat/completions | AI text generation | backend/api/gemini-proxy.ts:50 |
 | **tRPC Backend** | ${EXPO_PUBLIC_RORK_API_BASE_URL}/api/trpc | Type-safe API calls | lib/trpc.ts:20 |
 
 ---
@@ -843,10 +843,10 @@ Animated.timing(value, {
 **Recommendation:**
 ```typescript
 // Move to .env
-EXPO_PUBLIC_GEMINI_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here
 
 // Access in code
-const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
 if (!apiKey) throw new Error('Gemini API key required');
 ```
 

@@ -46,21 +46,22 @@ If you want a fresh key for this project:
 
 **Current .env file has**:
 ```bash
-EXPO_PUBLIC_GEMINI_API_KEY=AIzaSy___REPLACE_WITH_YOUR_ACTUAL_KEY___
+OPENROUTER_API_KEY=sk-or-v1-___REPLACE_WITH_YOUR_ACTUAL_KEY___
 ```
 
 **You need to**:
-1. Go to https://makersuite.google.com/app/apikey
-2. Click the copy icon next to any of your existing keys (recommend Tier 1)
-3. Open `.env` file:
+1. Go to https://openrouter.ai/keys
+2. Click "Create Key" to generate a new API key
+3. Copy the generated key
+4. Open `.env` file:
    ```bash
    nano .env
    ```
-4. Replace the placeholder with your copied key:
+5. Replace the placeholder with your copied key:
    ```bash
-   EXPO_PUBLIC_GEMINI_API_KEY=AIzaSy[your_actual_key_here]
+   OPENROUTER_API_KEY=sk-or-v1-[your_actual_key_here]
    ```
-5. Save and restart dev server
+6. Save and restart dev server
 
 ---
 

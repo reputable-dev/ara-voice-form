@@ -2,11 +2,11 @@
 
 ## ✅ GREAT NEWS: You Already Have Everything You Need!
 
-### 1. ✅ Google Gemini API Keys (FOUND - 7 Keys Available!)
+### 1. ✅ OpenRouter API Keys (Easy Setup Required)
 
-**Status**: ✅ **YOU ALREADY HAVE 7 API KEYS!**
+**Status**: 🟡 **NEED TO CREATE API KEY**
 
-**Your existing keys** (from https://makersuite.google.com/app/apikey):
+**What you need to do** (from https://openrouter.ai/keys):
 1. `...bkIs` - freo-cranes (Free tier)
 2. `...868-faef` - alias-hq (Tier 1) ⭐ **RECOMMENDED**
 3. `...BkPU` - alias-hq (Tier 1) ⭐ **RECOMMENDED**
@@ -16,13 +16,14 @@
 7. `...E8UE` - alias-hq (Tier 1, Firebase)
 
 **What to do**:
-1. ✅ Go to https://makersuite.google.com/app/apikey
-2. ✅ Click the **copy icon** next to any Tier 1 key (recommended)
-3. ✅ Open your `.env` file: `nano .env`
-4. ✅ Paste the key: `EXPO_PUBLIC_GEMINI_API_KEY=AIzaSy[your_key_here]`
-5. ✅ Save and close
+1. ✅ Go to https://openrouter.ai/keys
+2. ✅ Click **"Create Key"** to generate a new API key
+3. ✅ Copy the generated key
+4. ✅ Open your `.env` file: `nano .env`
+5. ✅ Paste the key: `OPENROUTER_API_KEY=sk-or-v1-[your_key_here]`
+6. ✅ Save and close
 
-**Screenshot**: `docs/screenshots/google-ai-api-key-page.png`
+**Screenshot**: `docs/screenshots/openrouter-api-key-page.png`
 
 ---
 
@@ -73,7 +74,7 @@
 nano .env
 
 # 3. Paste your key (replace the placeholder)
-EXPO_PUBLIC_GEMINI_API_KEY=AIzaSy[paste_your_copied_key_here]
+OPENROUTER_API_KEY=sk-or-v1-[paste_your_copied_key_here]
 
 # 4. Save (Ctrl+X, then Y, then Enter)
 
@@ -134,10 +135,10 @@ npx expo start --clear
 nano /Users/alias/Documents/ARA/ara-voice-form/.env
 
 # Find this line:
-EXPO_PUBLIC_GEMINI_API_KEY=AIzaSy___REPLACE_WITH_YOUR_ACTUAL_KEY___
+OPENROUTER_API_KEY=sk-or-v1-___REPLACE_WITH_YOUR_ACTUAL_KEY___
 
 # Paste your copied key (Cmd+V)
-EXPO_PUBLIC_GEMINI_API_KEY=AIzaSy[your_actual_key_here]
+OPENROUTER_API_KEY=sk-or-v1-[your_actual_key_here]
 
 # Save and exit: Ctrl+X, then Y, then Enter
 ```

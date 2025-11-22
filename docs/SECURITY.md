@@ -28,7 +28,7 @@ cp .env.example .env
 
 # 3. Verify it's working
 bun run start
-# Check console for "EXPO_PUBLIC_GEMINI_API_KEY is not configured" errors
+# Check console for "EXPO_PUBLIC_OPENROUTER_API_KEY is not configured" errors
 ```
 
 **Important:** Never commit the `.env` file. It's already in `.gitignore` to prevent this.
@@ -266,7 +266,7 @@ const apiKey = 'AIzaSyCC5LnBazvUeGJrg-QDQMB7bp64FV5DMVk'; // ❌ Exposed
 
 **Fixed Code:**
 ```typescript
-const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY; // ✅ Secure
+const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY; // ✅ Secure
 if (!apiKey) throw new Error('API key not configured');
 ```
 
