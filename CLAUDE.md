@@ -106,6 +106,19 @@ ara-voice-form/
 │   ├── Card.tsx                 # UI card component
 │   ├── TagToggle.tsx            # Tag selection component
 │   ├── ErrorBoundary.tsx        # Error boundary wrapper
+│   ├── elevenlabs/              # ElevenLabs UI components (NEW)
+│   │   ├── conversation/        # Chat/conversation components
+│   │   │   ├── Conversation.tsx # Scrollable message container
+│   │   │   ├── ConversationBar.tsx # Voice + text input bar
+│   │   │   ├── Message.tsx      # Individual message bubble
+│   │   │   └── Response.tsx     # Streaming markdown renderer
+│   │   ├── voice/               # Voice interaction components
+│   │   │   └── VoiceButton.tsx  # Press-hold voice recording button
+│   │   ├── audio/               # Audio visualization components
+│   │   │   ├── LiveWaveform.tsx # Real-time waveform visualizer
+│   │   │   └── BarVisualizer.tsx # Frequency spectrum visualizer
+│   │   ├── index.ts             # Component exports
+│   │   └── README.md            # Complete documentation
 │   └── __tests__/               # Component unit tests
 ├── backend/                      # Backend API logic
 │   ├── hono.ts                  # Hono server setup
@@ -116,7 +129,8 @@ ara-voice-form/
 │       └── routes/              # tRPC route handlers
 ├── lib/                          # Shared utilities
 │   ├── trpc.ts                  # tRPC client setup
-│   └── sentry.ts                # Sentry error tracking
+│   ├── sentry.ts                # Sentry error tracking
+│   └── conversational-ai.ts     # Conversational AI service (NEW)
 ├── utils/                        # Helper functions
 │   └── contractParser.ts        # Contract parsing utilities
 ├── constants/                    # App-wide constants
@@ -149,7 +163,50 @@ The app uses **two-tier transcription strategy**:
 - `components/VoiceRecorder.tsx:279-346` - Recording start with fallback
 - `components/VoiceRecorder.tsx:407-495` - Recording stop with commit
 
-#### 2. Voice Edit Feature (2-Second Hold)
+#### 2. ElevenLabs UI Components (NEW)
+
+The app now includes a complete suite of **production-ready conversational AI components** inspired by elevenlabs/ui but built specifically for React Native:
+
+**Conversation Components:**
+- `<Conversation>` - Auto-scrolling message container with sticky-to-bottom behavior
+- `<ConversationBar>` - Input bar with voice recording (ScribeV2 Realtime) + text input
+- `<Message>` - Role-based message bubbles (user/assistant/system) with avatars
+- `<Response>` - Streaming markdown renderer with character-by-character animation
+
+**Voice Components:**
+- `<VoiceButton>` - Press-and-hold voice recording with waveform visualization
+
+**Audio Visualization:**
+- `<LiveWaveform>` - Real-time animated waveform (20 bars with stagger effect)
+- `<BarVisualizer>` - Frequency spectrum visualizer with smoothing
+
+**Conversational AI Service:**
+```typescript
+import { createConversationalAI, SYSTEM_PROMPTS } from '@/lib/conversational-ai';
+
+const ai = createConversationalAI({
+  systemPrompt: SYSTEM_PROMPTS.voice_assistant,
+});
+
+// Send message with streaming
+for await (const chunk of ai.streamMessage("Hello!")) {
+  console.log(chunk); // Display each chunk
+}
+```
+
+**Example Implementation:**
+See `app/(tabs)/ai-chat.tsx` for a complete working example of a conversational AI chat interface with voice input and streaming responses.
+
+**Documentation:**
+- Full component API: `components/elevenlabs/README.md`
+- Example usage: `app/(tabs)/ai-chat.tsx`
+
+**Key files:**
+- `components/elevenlabs/conversation/ConversationBar.tsx:105-195` - Voice input integration
+- `components/elevenlabs/conversation/Response.tsx:35-74` - Streaming animation
+- `lib/conversational-ai.ts:27-99` - AI service implementation
+
+#### 3. Voice Edit Feature (2-Second Hold)
 
 Users can edit any input field by holding for 2 seconds:
 
@@ -171,7 +228,7 @@ Users can edit any input field by holding for 2 seconds:
 - `components/VoiceEdit.tsx:502-530` - Smart edit processing with AI
 - `components/VoiceEdit.tsx:539-583` - 2-second hold detection
 
-#### 3. tRPC + React Query Integration
+#### 4. tRPC + React Query Integration
 
 Type-safe API calls with automatic caching and invalidation:
 
@@ -194,7 +251,7 @@ const { data } = trpc.example.hi.useQuery();
 - `lib/trpc.ts` - Client configuration with React Query
 - `app/_layout.tsx:40-48` - Provider setup
 
-#### 4. Error Monitoring with Sentry
+#### 5. Error Monitoring with Sentry
 
 Production error tracking with automatic breadcrumbs:
 
