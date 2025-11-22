@@ -38,42 +38,38 @@ export default function VoiceFillScreen() {
     setIsProcessing(true);
 
     try {
-      const apiKey = 'AIzaSyCC5LnBazvUeGJrg-QDQMB7bp64FV5DMVk';
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
-      
+      // Use backend proxy for secure API calls (API key is server-side only)
+      const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'http://localhost:3000';
+      const proxyUrl = `${baseUrl}/api/gemini-proxy`;
+
       const prompt = `Extract structured information from the following text and return it as JSON with these exact fields: name, email, phone, address, occupation, message. If a field is not mentioned, use an empty string. Only return the JSON object, nothing else.\n\nText: ${text}`;
-      
-      const requestBody = {
-        contents: [{
-          role: 'user',
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          temperature: 0.1,
-          topK: 1,
-          topP: 1,
-          maxOutputTokens: 1024,
-        },
-      };
-      
-      const response = await fetch(url, {
+
+      const response = await fetch(proxyUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          prompt,
+          generationConfig: {
+            temperature: 0.1,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 1024,
+          },
+        }),
       });
-      
+
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+        throw new Error(`Proxy request failed: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
-      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        const aiResponse = data.candidates[0].content.parts[0].text;
+
+      if (data.success && data.response) {
+        const aiResponse = data.response;
         const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-        
+
         if (jsonMatch) {
           const parsedData = JSON.parse(jsonMatch[0]);
           setFormData({
@@ -87,6 +83,8 @@ export default function VoiceFillScreen() {
         } else {
           setFormData(prev => ({ ...prev, message: text }));
         }
+      } else {
+        throw new Error('Invalid proxy response format');
       }
     } catch (error) {
       console.error('Error processing transcription:', error);

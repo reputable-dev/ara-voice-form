@@ -7,6 +7,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import FloatingAINavbar from "@/components/FloatingAINavbar";
 import { trpc, trpcClient } from "@/lib/trpc";
+import { initSentry } from "@/lib/sentry";
+
+// Initialize Sentry error monitoring
+initSentry();
 
 SplashScreen.preventAutoHideAsync();
 

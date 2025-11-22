@@ -267,6 +267,7 @@ export default function VoiceRecorder({
         disabled={isProcessing}
         style={styles.recordButton}
         activeOpacity={0.8}
+        testID="voiceRecorderButton"
       >
         <Animated.View
           style={[

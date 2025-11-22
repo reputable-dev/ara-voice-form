@@ -1,0 +1,62 @@
+{
+  "cli": {
+    "version": ">= 13.2.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_RORK_API_BASE_URL": "http://localhost:3000"
+      },
+      "channel": "development"
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_RORK_API_BASE_URL": "https://api-staging.yourapp.com"
+      },
+      "channel": "preview"
+    },
+    "production": {
+      "ios": {
+        "config": "app.json"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_RORK_API_BASE_URL": "https://api.yourapp.com"
+      },
+      "autoIncrement": true,
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "YOUR_APPLE_ID_EMAIL@example.com",
+        "ascAppId": "YOUR_ASC_APP_ID_FROM_APP_STORE_CONNECT",
+        "appleTeamId": "YOUR_APPLE_TEAM_ID_10_CHARS"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./android-service-account.json",
+        "track": "production"
+      }
+    }
+  }
+}

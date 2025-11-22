@@ -30,6 +30,7 @@ import {
   X,
 } from 'lucide-react-native';
 import { ContractFormData } from '@/types/contract';
+import { captureException, addBreadcrumb } from '@/lib/sentry';
 
 interface MessageImage {
   uri: string;
@@ -104,6 +105,11 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
       };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
+      console.error('FloatingAIAssistant: Fill form error', error);
+      captureException(error instanceof Error ? error : new Error('Fill form failed'), {
+        context: 'handleFillWithAI',
+        sourceText: sourceText?.slice(0, 200),
+      });
       Alert.alert('Error', 'Failed to fill form with AI. Please check the source document format.');
     }
   }, [contractData]);
@@ -124,7 +130,10 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
 
   const callGeminiAPI = useCallback(async (messages: Message[]): Promise<string> => {
     try {
-      const apiKey = 'AIzaSyCC5LnBazvUeGJrg-QDQMB7bp64FV5DMVk';
+      const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('EXPO_PUBLIC_GEMINI_API_KEY is not configured. Please add it to your .env file.');
+      }
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
       
       // Convert messages to Gemini format
@@ -215,6 +224,11 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
       }
     } catch (error) {
       console.error('Error calling Gemini API:', error);
+      captureException(error instanceof Error ? error : new Error('Gemini API call failed'), {
+        context: 'callGeminiAPI',
+        messageCount: messages.length,
+        apiEndpoint: 'generativelanguage.googleapis.com',
+      });
       throw error;
     }
   }, []);
@@ -262,6 +276,16 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
       setMessages(prev => [...prev, aiResponse]);
     } catch (error) {
       console.error('Error getting AI response:', error);
+      captureException(error instanceof Error ? error : new Error('AI response failed'), {
+        context: 'sendMessage',
+        hasContractData: !!contractData,
+        messageLength: inputText.length,
+        imageCount: selectedImages.length,
+      });
+      addBreadcrumb('AI message send failed', 'error', {
+        inputLength: inputText.length,
+        hasImages: selectedImages.length > 0,
+      });
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -507,7 +531,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
                 style={styles.textInput}
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder="Ask me anything..."
+                placeholder="Type your message..."
                 placeholderTextColor={Colors.light.subtle}
                 multiline
                 maxLength={500}
@@ -520,6 +544,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
                   (!inputText.trim() && selectedImages.length === 0) && styles.sendButtonDisabled
                 ]}
                 disabled={!inputText.trim() && selectedImages.length === 0}
+                testID="ai-send-button"
               >
                 <Send 
                   color={(inputText.trim() || selectedImages.length > 0) ? Colors.light.tint : Colors.light.subtle} 
@@ -536,7 +561,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
         <TouchableOpacity
           onPress={toggleExpanded}
           style={styles.navButton}
-          testID="aiAssistantToggle"
+          testID="ai-assistant-toggle"
         >
           <View style={styles.navButtonContent}>
             {isExpanded ? (

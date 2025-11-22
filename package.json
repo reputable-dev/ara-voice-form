@@ -6,7 +6,13 @@
     "start": "bunx rork start -p fhwpveo9srinxla5renne --tunnel",
     "start-web": "bunx rork start -p fhwpveo9srinxla5renne --web --tunnel",
     "start-web-dev": "DEBUG=expo* bunx rork start -p fhwpveo9srinxla5renne --web --tunnel",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.86",
@@ -26,6 +32,7 @@
     "expo-av": "~16.0.7",
     "expo-blur": "~15.0.7",
     "expo-constants": "~18.0.10",
+    "expo-dev-client": "~6.0.18",
     "expo-font": "~14.0.9",
     "expo-haptics": "~15.0.7",
     "expo-image": "~3.0.10",
@@ -57,9 +64,15 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@expo/ngrok": "^4.1.0",
+    "@sentry/react-native": "^7.6.0",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.10",
     "eslint": "9.31.0",
     "eslint-config-expo": "9.2.0",
+    "jest": "^30.2.0",
+    "jest-expo": "^54.0.13",
     "typescript": "~5.9.2"
   },
   "private": true

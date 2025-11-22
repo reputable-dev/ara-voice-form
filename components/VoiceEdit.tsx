@@ -12,6 +12,7 @@ import {
 import { BlurView } from 'expo-blur';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import VoiceEditModal from './VoiceEditModal';
+import { captureException, addBreadcrumb } from '@/lib/sentry';
 
 interface VoiceEditProps {
   children: ReactNode;
@@ -109,6 +110,11 @@ export default function VoiceEdit({
       console.log('VoiceEdit: Recording started');
     } catch (err) {
       console.error('VoiceEdit: Failed to start recording', err);
+      captureException(err instanceof Error ? err : new Error('Recording start failed'), {
+        context: 'startRecording',
+        fieldName,
+        platform: Platform.OS,
+      });
       Alert.alert('Error', 'Failed to start recording. Please try again.');
       handleCancel();
     }
@@ -132,6 +138,11 @@ export default function VoiceEdit({
       }
     } catch (error) {
       console.error('VoiceEdit: Failed to stop recording', error);
+      captureException(error instanceof Error ? error : new Error('Recording stop failed'), {
+        context: 'stopRecording',
+        fieldName,
+        audioUri: audioRecorder.uri,
+      });
       Alert.alert('Error', 'Failed to process recording.');
       handleCancel();
     }
@@ -212,6 +223,12 @@ export default function VoiceEdit({
           setTranscriptionText('Edit applied!');
         } catch (editError) {
           console.error('VoiceEdit: Edit failed', editError);
+          captureException(editError instanceof Error ? editError : new Error('Smart edit failed'), {
+            context: 'processSmartEdit',
+            fieldName,
+            transcriptionText: data.text,
+            currentValueLength: value.length,
+          });
           setTranscriptionText('Edit failed');
         }
         
@@ -224,6 +241,20 @@ export default function VoiceEdit({
     } catch (error) {
       console.error('VoiceEdit: Error processing:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to process';
+
+      captureException(error instanceof Error ? error : new Error('Voice edit processing failed'), {
+        context: 'transcribeAndEdit',
+        fieldName,
+        audioUri: uri,
+        errorMessage,
+        isRateLimit: errorMessage.includes('429'),
+      });
+
+      addBreadcrumb('Voice edit failed', 'error', {
+        fieldName,
+        errorType: errorMessage.includes('429') ? 'rate_limit' : 'processing_error',
+      });
+
       if (errorMessage.includes('429')) {
         Alert.alert('Rate Limit', 'Too many requests. Please wait a moment and try again.');
       } else {

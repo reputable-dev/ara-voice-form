@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { captureException, addBreadcrumb } from "@/lib/sentry";
 
 type Props = { children: React.ReactNode };
 type State = { hasError: boolean; errorMsg: string };
@@ -11,11 +12,25 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, errorMsg: error?.message ?? "Unknown error" };
+    return { hasError: true, errorMsg: error?.message || "Unknown error" };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.log("ErrorBoundary caught", error?.message, info?.componentStack);
+
+    // Report error to Sentry with React component stack
+    captureException(error, {
+      errorBoundary: true,
+      componentStack: info.componentStack,
+      errorInfo: info,
+    });
+
+    // Add breadcrumb for error context
+    addBreadcrumb(
+      `Error caught in ErrorBoundary: ${error.message}`,
+      'error',
+      { componentStack: info.componentStack?.slice(0, 500) }
+    );
   }
 
   onReset = () => {

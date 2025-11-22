@@ -55,19 +55,44 @@ export function parseContractSource(srcRaw: string): ParseResult {
     const mClient = src.match(/Client name:\s*([^\n]+)/i);
     if (mClient) data.clientName = trim(mClient[1]);
 
-    const mSite = src.match(/Site Address:\s*([^\t\n]+).*?Date:\s*([^\n]+)/i);
-    if (mSite) {
-      data.siteAddress = trim(mSite[1]);
-      data.date = trim(mSite[2]);
+    // Match site address with optional date
+    const mSiteWithDate = src.match(/Site Address:\s*([^\t\n]+).*?Date:\s*([^\n]+)/i);
+    if (mSiteWithDate) {
+      data.siteAddress = trim(mSiteWithDate[1]);
+      data.date = trim(mSiteWithDate[2]);
+    } else {
+      // Fallback: match site address without date requirement
+      const mSiteOnly = src.match(/Site Address:\s*([^\n]+)/i);
+      if (mSiteOnly) data.siteAddress = trim(mSiteOnly[1]);
     }
 
     if (/ARA Indigenous Services\s*[☒x]/i.test(src)) data.brand = "AIS";
     else if (/ARA Property Services\s*[☒x]/i.test(src)) data.brand = "APS";
 
-    if (/Start up\s*[☒x]/i.test(src)) data.isStartup = true;
-    if (/Adjustment\s*[☒x]/i.test(src)) data.isAdjustment = true;
-    if (/Termination\s*[☒x]/i.test(src)) data.isTermination = true;
-    if (/Change in allowed hours\s*[☒x]/i.test(src) || /Only\s*12hrs per day will be used/i.test(src)) data.isChangeHours = true;
+    // Contract types - explicitly handle both checked (☒) and unchecked (☐) boxes
+    if (/Start up\s*[☒x]/i.test(src)) {
+      data.isStartup = true;
+    } else if (/Start up\s*☐/i.test(src)) {
+      data.isStartup = false;
+    }
+
+    if (/Adjustment\s*[☒x]/i.test(src)) {
+      data.isAdjustment = true;
+    } else if (/Adjustment\s*☐/i.test(src)) {
+      data.isAdjustment = false;
+    }
+
+    if (/Termination\s*[☒x]/i.test(src)) {
+      data.isTermination = true;
+    } else if (/Termination\s*☐/i.test(src)) {
+      data.isTermination = false;
+    }
+
+    if (/Change in allowed hours\s*[☒x]/i.test(src) || /Only\s*12hrs per day will be used/i.test(src)) {
+      data.isChangeHours = true;
+    } else if (/Change in allowed hours\s*☐/i.test(src)) {
+      data.isChangeHours = false;
+    }
 
     const mEff = src.match(/EFFECTIVE\s*([0-9/]+)/i) ?? src.match(/Date change will take effect:\s*([0-9/]+)/i);
     if (mEff) data.effectiveDate = trim(mEff[1]);
@@ -95,6 +120,10 @@ export function parseContractSource(srcRaw: string): ParseResult {
     const mEmpName = src.match(/New Employee Name:\s*([^\n]+?)\s+Mobile/i) ?? src.match(/Day Cleaner\s+([A-Za-z\s'\-]+)\s+[–-]/i);
     if (mEmpName) data.newEmployeeName = trim(mEmpName[1]);
 
+    // Extract mobile number from employee line
+    const mEmpMobile = src.match(/Mobile:\s*([^\n]+)/i);
+    if (mEmpMobile) data.newEmployeeMobile = trim(mEmpMobile[1]);
+
     const mShift = src.match(/New shift\s*([0-9]{1,2}:[0-9]{2})\s*[–-]\s*([0-9]{1,2}:[0-9]{2})([^\n]*)/i);
     if (mShift) {
       data.shiftStart = trim(mShift[1]);
@@ -108,10 +137,13 @@ export function parseContractSource(srcRaw: string): ParseResult {
 
     if (/New employment contract required/i.test(src)) data.newEmploymentContractRequired = true;
 
+    // Build summary lines
+    if (data.clientName) summary.push(`Client: ${data.clientName}`);
+
     const term = src.match(/Termination of day cleaning service[^\n]+charges\./i);
     if (term) summary.push(trim(term[0]));
     if (data.newInvoiceAmount) summary.push(`New AWB invoice per month: ${data.newInvoiceAmount}`);
-    if (data.effectiveDate) summary.push(`Effective date: ${data.effectiveDate}`);
+    if (data.effectiveDate) summary.push(`Effective: ${data.effectiveDate}`);
     if (data.newEmployeeName || data.shiftStart || data.shiftEnd) {
       const nm = data.newEmployeeName ?? "Employee";
       const st = data.shiftStart ?? "";
