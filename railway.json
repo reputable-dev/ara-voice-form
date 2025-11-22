@@ -8,5 +8,6 @@
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
-  }
+  },
+  "project": "b66395fd-11bd-454d-8d4f-cbaa3da75ae8"
 }

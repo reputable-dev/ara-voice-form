@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/26</span>
-            </div>
-        
-            
-            <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
-                <span class="quiet">Branches</span>
                 <span class='fraction'>0/25</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/27</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/26</span>
+                <span class='fraction'>0/25</span>
             </div>
         
             
@@ -183,15 +183,7 @@
 <a name='L118'></a><a href='#L118'>118</a>
 <a name='L119'></a><a href='#L119'>119</a>
 <a name='L120'></a><a href='#L120'>120</a>
-<a name='L121'></a><a href='#L121'>121</a>
-<a name='L122'></a><a href='#L122'>122</a>
-<a name='L123'></a><a href='#L123'>123</a>
-<a name='L124'></a><a href='#L124'>124</a>
-<a name='L125'></a><a href='#L125'>125</a>
-<a name='L126'></a><a href='#L126'>126</a>
-<a name='L127'></a><a href='#L127'>127</a>
-<a name='L128'></a><a href='#L128'>128</a>
-<a name='L129'></a><a href='#L129'>129</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L121'></a><a href='#L121'>121</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -206,6 +198,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -217,6 +210,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -305,16 +299,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -332,7 +316,9 @@
  *   }
  */
 &nbsp;
-import { Request, Response } from 'express';
+import { Hono } from 'hono';
+&nbsp;
+const app = <span class="cstat-no" title="statement not covered" >new Hono();</span>
 &nbsp;
 interface OpenRouterProxyRequest {
   prompt: string;
@@ -344,27 +330,27 @@ interface OpenRouterProxyRequest {
   };
 }
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >POST(</span>req: Request, res: Response) {
+<span class="cstat-no" title="statement not covered" >app.post('/api/gemini-proxy', <span class="fstat-no" title="function not covered" >as</span>ync (c) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  try {</span>
     // Validate request
-    const { prompt, generationConfig }: OpenRouterProxyRequest = <span class="cstat-no" title="statement not covered" >req.body;</span>
+    const { prompt, generationConfig }: OpenRouterProxyRequest = <span class="cstat-no" title="statement not covered" >await c.req.json();</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (!prompt || typeof prompt !== 'string') {</span>
-<span class="cstat-no" title="statement not covered" >      return res.status(400).json({</span>
+<span class="cstat-no" title="statement not covered" >      return c.json({</span>
         error: 'Invalid request',
         message: 'Prompt is required and must be a string'
-      });
+      }, 400);
     }
 &nbsp;
     // Get API key from environment (server-side only)
-    const apiKey = <span class="cstat-no" title="statement not covered" >process.env.OPENROUTER_API_KEY;</span>
+    const apiKey = <span class="cstat-no" title="statement not covered" >c.env?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (!apiKey) {</span>
 <span class="cstat-no" title="statement not covered" >      console.error('OPENROUTER_API_KEY not configured in environment');</span>
-<span class="cstat-no" title="statement not covered" >      return res.status(500).json({</span>
+<span class="cstat-no" title="statement not covered" >      return c.json({</span>
         error: 'Configuration error',
         message: 'Server is not properly configured. Please contact support.'
-      });
+      }, 500);
     }
 &nbsp;
     // Prepare OpenRouter API request
@@ -389,8 +375,8 @@ export async function <span class="fstat-no" title="function not covered" >POST(
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || '', // Optional: for rankings
-        'X-Title': process.env.OPENROUTER_X_TITLE || '', // Optional: for rankings
+        'HTTP-Referer': c.env?.OPENROUTER_HTTP_REFERER || process.env.OPENROUTER_HTTP_REFERER || '', // Optional: for rankings
+        'X-Title': c.env?.OPENROUTER_X_TITLE || process.env.OPENROUTER_X_TITLE || '', // Optional: for rankings
       },
       body: JSON.stringify(requestBody),
     });
@@ -400,10 +386,10 @@ export async function <span class="fstat-no" title="function not covered" >POST(
 <span class="cstat-no" title="statement not covered" >      console.error('OpenRouter API error:', response.status, errorText);</span>
 &nbsp;
       // Don't expose detailed error to client
-<span class="cstat-no" title="statement not covered" >      return res.status(response.status).json({</span>
+<span class="cstat-no" title="statement not covered" >      return c.json({</span>
         error: 'AI service error',
         message: 'Failed to process request. Please try again.'
-      });
+      }, response.status);
     }
 &nbsp;
     const data = <span class="cstat-no" title="statement not covered" >await response.json();</span>
@@ -411,16 +397,16 @@ export async function <span class="fstat-no" title="function not covered" >POST(
     // Validate response format
 <span class="cstat-no" title="statement not covered" >    if (!data.choices || !data.choices[0] || !data.choices[0].message) {</span>
 <span class="cstat-no" title="statement not covered" >      console.error('Invalid OpenRouter API response format:', JSON.stringify(data));</span>
-<span class="cstat-no" title="statement not covered" >      return res.status(500).json({</span>
+<span class="cstat-no" title="statement not covered" >      return c.json({</span>
         error: 'Invalid response',
         message: 'Received invalid response from AI service'
-      });
+      }, 500);
     }
 &nbsp;
     // Extract and return AI response
     const aiResponse = <span class="cstat-no" title="statement not covered" >data.choices[0].message.content;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return res.status(200).json({</span>
+<span class="cstat-no" title="statement not covered" >    return c.json({</span>
       success: true,
       response: aiResponse,
       model: 'anthropic/claude-3-haiku'
@@ -429,24 +415,14 @@ export async function <span class="fstat-no" title="function not covered" >POST(
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    console.error('OpenRouter proxy error:', error);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return res.status(500).json({</span>
+<span class="cstat-no" title="statement not covered" >    return c.json({</span>
       error: 'Server error',
       message: 'An unexpected error occurred. Please try again.'
-    });
+    }, 500);
   }
-}
+});
 &nbsp;
-// For serverless deployment (Vercel, Netlify, etc.)
-export default async function <span class="fstat-no" title="function not covered" >handler(</span>req: Request, res: Response) {
-<span class="cstat-no" title="statement not covered" >  if (req.method === 'POST') {</span>
-<span class="cstat-no" title="statement not covered" >    return POST(req, res);</span>
-  }
-&nbsp;
-<span class="cstat-no" title="statement not covered" >  return res.status(405).json({</span>
-    error: 'Method not allowed',
-    message: 'Only POST requests are accepted'
-  });
-}
+export default app;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -454,7 +430,7 @@ export default async function <span class="fstat-no" title="function not covered
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-22T07:43:00.952Z
+                at 2025-11-22T08:11:09.623Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
