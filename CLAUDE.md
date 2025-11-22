@@ -116,10 +116,22 @@ ara-voice-form/
 │   │   │   └── VoiceButton.tsx  # Press-hold voice recording button
 │   │   ├── audio/               # Audio visualization components
 │   │   │   ├── LiveWaveform.tsx # Real-time waveform visualizer
-│   │   │   └── BarVisualizer.tsx # Frequency spectrum visualizer
+│   │   │   ├── BarVisualizer.tsx # Frequency spectrum visualizer
+│   │   │   ├── TranscriptViewer.tsx # Word-by-word transcript sync
+│   │   │   └── AudioPlayer.tsx  # Audio playback controller
 │   │   ├── index.ts             # Component exports
 │   │   └── README.md            # Complete documentation
 │   └── __tests__/               # Component unit tests
+├── convex/                       # Convex backend functions (NEW)
+│   ├── api.ts                   # OpenRouter & ElevenLabs integrations
+│   ├── geminiRag.ts             # Gemini RAG proxy functions (NEW)
+│   ├── schema.ts                # Database schema
+│   └── _generated/              # Auto-generated types
+├── services/                     # External services (NEW)
+│   └── gemini_rag/              # Gemini RAG service directory
+│       ├── Dockerfile           # Container definition
+│       ├── .dockerignore        # Docker build exclusions
+│       └── .env.example         # Environment template
 ├── backend/                      # Backend API logic
 │   ├── hono.ts                  # Hono server setup
 │   ├── api/gemini-proxy.ts      # Gemini API proxy
@@ -128,9 +140,11 @@ ara-voice-form/
 │       ├── create-context.ts    # tRPC context factory
 │       └── routes/              # tRPC route handlers
 ├── lib/                          # Shared utilities
-│   ├── trpc.ts                  # tRPC client setup
+│   ├── trpc.ts                  # Convex client setup
 │   ├── sentry.ts                # Sentry error tracking
-│   └── conversational-ai.ts     # Conversational AI service (NEW)
+│   ├── conversational-ai.ts     # Conversational AI service (NEW)
+│   ├── gemini-rag.ts            # Gemini RAG hooks (NEW)
+│   └── convex-helpers.ts        # Convex type-safe helpers (NEW)
 ├── utils/                        # Helper functions
 │   └── contractParser.ts        # Contract parsing utilities
 ├── constants/                    # App-wide constants
@@ -208,7 +222,79 @@ See `app/(tabs)/ai-chat.tsx` for a complete working example of a conversational 
 - `components/elevenlabs/conversation/Response.tsx:35-74` - Streaming animation
 - `lib/conversational-ai.ts:27-99` - AI service implementation
 
-#### 3. Voice Edit Feature (2-Second Hold)
+#### 3. Gemini RAG Integration (NEW)
+
+The app integrates **Google Gemini RAG** (Retrieval-Augmented Generation) for file search and knowledge base querying:
+
+**Backend Proxy (Convex):**
+- `convex/geminiRag.ts` - Convex mutations/queries that proxy to the RAG service
+- Runs on `http://localhost:5001` (configurable via `RAG_SERVICE_URL`)
+- Based on [gemini-rag-file-search](https://github.com/promptadvisers/gemini-rag-file-search)
+
+**Frontend React Hooks:**
+```typescript
+import { useQueryRag, useListRagFiles, useRagStatus } from '@/lib/gemini-rag';
+
+// Query RAG
+const { query } = useQueryRag();
+const result = await query("What is in document X?", "my_store");
+
+// List files
+const { files, totalFiles, isOnline } = useListRagFiles("my_store");
+
+// Check status
+const { status, isOnline } = useRagStatus();
+```
+
+**Available Operations:**
+- `uploadFile()` - Upload files for indexing (base64 encoded)
+- `query()` - Ask questions about indexed files
+- `listFiles()` - List all files in a store
+- `deleteFile()` - Remove file from index
+- `clearStore()` - Delete all files in a store
+- `getStatus()` - Check RAG service health
+
+**Setup & Deployment:**
+
+**Option 1: Local Development (Bash Script)**
+```bash
+# Run integration script
+./integrate_gemini_rag.sh
+
+# Service will start on http://localhost:5001
+# Status: curl http://localhost:5001/status
+# Stop: kill $(cat services/gemini_rag/rag.pid)
+```
+
+**Option 2: Docker Deployment**
+```bash
+# Build and start with Docker Compose
+docker-compose up -d gemini-rag
+
+# Check logs
+docker-compose logs -f gemini-rag
+
+# Stop service
+docker-compose down
+```
+
+**Demo Screen:**
+- `app/(tabs)/rag-demo.tsx` - Complete RAG interface with query, file management, and status monitoring
+
+**Key files:**
+- `convex/geminiRag.ts` - Backend proxy functions
+- `lib/gemini-rag.ts` - React hooks for RAG operations
+- `integrate_gemini_rag.sh` - Integration script
+- `docker-compose.yml` - Docker orchestration
+- `services/gemini_rag/Dockerfile` - Container definition
+
+**Configuration:**
+- `GEMINI_API_KEY` - Your Google Gemini API key (required)
+- `RAG_SERVICE_URL` - RAG service URL (default: `http://localhost:5001`)
+- `RAG_STORE_NAME` - Default store name (default: `default_store`)
+- `RAG_CORS_ORIGINS` - Allowed CORS origins
+
+#### 4. Voice Edit Feature (2-Second Hold)
 
 Users can edit any input field by holding for 2 seconds:
 
@@ -293,6 +379,19 @@ OPENROUTER_API_KEY=your_openrouter_api_key
 
 # ElevenLabs API Key (speech-to-text)
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
+EXPO_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_api_key  # For client-side ScribeV2
+
+# Google Gemini API Key (RAG file search - NEW)
+GEMINI_API_KEY=your_gemini_api_key
+
+# RAG Service Configuration (NEW)
+RAG_SERVICE_URL=http://localhost:5001
+RAG_STORE_NAME=default_store
+RAG_CORS_ORIGINS=http://localhost:3000,http://localhost:5001
+GEMINI_MODEL=gemini-2.5-pro
+
+# Convex Backend (NEW)
+EXPO_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
 
 # Sentry DSN (error monitoring - optional in dev)
 EXPO_PUBLIC_SENTRY_DSN=your_sentry_dsn

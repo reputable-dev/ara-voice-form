@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Mic, MessageCircle, FileText, LayoutDashboard } from "lucide-react-native";
+import { Mic, MessageCircle, FileText, LayoutDashboard, Database, AudioLines } from "lucide-react-native";
 import React from "react";
 import Colors from "@/constants/colors";
 
@@ -46,6 +46,20 @@ export default function TabLayout() {
         options={{
           title: "Contract",
           tabBarIcon: ({ color }) => <FileText color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="transcript-demo"
+        options={{
+          title: "Transcript",
+          tabBarIcon: ({ color }) => <AudioLines color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="rag-demo"
+        options={{
+          title: "RAG",
+          tabBarIcon: ({ color }) => <Database color={color} />,
         }}
       />
     </Tabs>

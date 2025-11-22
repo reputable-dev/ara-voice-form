@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  gemini-rag:
+    build:
+      context: ./services/gemini_rag
+      dockerfile: Dockerfile
+    container_name: gemini-rag
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - HOST=0.0.0.0
+      - PORT=5001
+      - MODEL=${GEMINI_MODEL:-gemini-2.5-pro}
+      - STORE_NAME=${RAG_STORE_NAME:-default_store}
+      - STATE_FILE=store_state.json
+      - CORS_ALLOW_ORIGINS=${RAG_CORS_ORIGINS:-http://localhost:3000,http://localhost:5001}
+      - UPLOAD_TIMEOUT=${UPLOAD_TIMEOUT:-180}
+      - ENABLE_API_DOCS=${ENABLE_API_DOCS:-true}
+    volumes:
+      - gemini-rag-data:/app/data
+      - ./services/gemini_rag:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ara-network
+
+volumes:
+  gemini-rag-data:
+    driver: local
+
+networks:
+  ara-network:
+    driver: bridge
