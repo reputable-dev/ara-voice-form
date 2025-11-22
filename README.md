@@ -1,27 +1,39 @@
 # Ask ARA — Knowledge Assistant
-AI-Powered Voice Interaction for Form Filling & Contract Analysis
 
-React Native Expo TypeScript Railway
+**AI-Powered Voice Interaction for Form Filling & Contract Analysis**
 
-📱 Download for iOS • 📱 Download for Android • 🌐 Try Web Version
+[![React Native](https://img.shields.io/badge/React%20Native-0.81.5-blue.svg)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-54.0.0-black.svg)](https://expo.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![Railway](https://img.shields.io/badge/Deployed%20on-Railway-0B0D17.svg)](https://railway.app/)
 
-✨ Overview
-Ask ARA is a revolutionary mobile application that transforms how users interact with forms and contracts through advanced AI-powered voice technology. Built for professionals who need to quickly fill forms and analyze complex contract adjustments, the app combines real-time speech-to-text transcription with intelligent AI parsing to automate tedious data entry tasks.
+[📱 Download for iOS](https://apps.apple.com/app/ask-ara) • [📱 Download for Android](https://play.google.com/store/apps/ask-ara) • [🌐 Try Web Version](https://ask-ara.vercel.app)
 
-🎯 Key Features
-🎤 Voice Fill: Speak naturally to fill contact forms instantly
-📄 Contract Analysis: Voice-powered contract adjustment forms with AI parsing
-⚡ Real-Time Transcription: Live speech-to-text using ElevenLabs ScribeV2
-🤖 AI Form Extraction: Intelligent field recognition and auto-population
-📝 Voice Editing: 2-second hold gesture for voice-based field editing
-🔄 Cross-Platform: Native iOS, Android, and Web support
-🚀 Railway Deployed: Production-ready backend infrastructure
-🚀 Quick Start
-Prerequisites
-Node.js 18+ and Bun runtime
-Expo CLI: npm install -g @expo/cli
-Railway CLI (for deployment): npm install -g @railway/cli
-Installation
+## ✨ Overview
+
+**Ask ARA** is a revolutionary mobile application that transforms how users interact with forms and contracts through advanced AI-powered voice technology. Built for professionals who need to quickly fill forms and analyze complex contract adjustments, the app combines real-time speech-to-text transcription with intelligent AI parsing to automate tedious data entry tasks.
+
+### 🎯 Key Features
+
+- **🎤 Voice Fill**: Speak naturally to fill contact forms instantly
+- **📄 Contract Analysis**: Voice-powered contract adjustment forms with AI parsing
+- **⚡ Real-Time Transcription**: Live speech-to-text using ElevenLabs ScribeV2
+- **🤖 AI Form Extraction**: Intelligent field recognition and auto-population
+- **📝 Voice Editing**: 2-second hold gesture for voice-based field editing
+- **🔄 Cross-Platform**: Native iOS, Android, and Web support
+- **🚀 Railway Deployed**: Production-ready backend infrastructure
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js** 18+ and **Bun** runtime
+- **Expo CLI**: `npm install -g @expo/cli`
+- **Railway CLI** (for deployment): `npm install -g @railway/cli`
+
+### Installation
+
+```bash
 # Clone the repository
 git clone <your-repo-url>
 cd ara-voice-form
@@ -34,7 +46,11 @@ cp .env.example .env
 
 # Edit .env with your API keys
 # Required: OPENROUTER_API_KEY, ELEVENLABS_API_KEY
-Development
+```
+
+### Development
+
+```bash
 # Start backend server
 bun run dev:backend
 
@@ -43,7 +59,11 @@ bun run start
 
 # Or start web version for quick testing
 bun run start-web
-Testing
+```
+
+### Testing
+
+```bash
 # Run all tests
 bun run test
 
@@ -52,73 +72,158 @@ bun run test:coverage
 
 # Watch mode
 bun run test:watch
-📱 App Features
-🎤 Voice Fill Screen
+```
+
+## 📱 App Features
+
+### 🎤 Voice Fill Screen
+
 Transform spoken language into structured form data:
 
-Natural Speech Input: Speak conversationally about contact information
-AI-Powered Parsing: Automatically extracts name, email, phone, address, occupation
-Real-Time Feedback: See transcription and AI processing in real-time
-Smart Validation: Intelligent field recognition and formatting
-Example: Say "My name is John Doe, email john@example.com, phone 555-1234, I live at 123 Main Street, and I work as a software engineer" → Form fills automatically!
+- **Natural Speech Input**: Speak conversationally about contact information
+- **AI-Powered Parsing**: Automatically extracts name, email, phone, address, occupation
+- **Real-Time Feedback**: See transcription and AI processing in real-time
+- **Smart Validation**: Intelligent field recognition and formatting
 
-📄 Contract Analysis Screen
+**Example**: Say *"My name is John Doe, email john@example.com, phone 555-1234, I live at 123 Main Street, and I work as a software engineer"* → Form fills automatically!
+
+### 📄 Contract Analysis Screen
+
 Professional contract adjustment forms with voice assistance:
 
-Complex Form Fields: Client details, pricing, employee changes, subcontractor info
-Voice Transcription: Speak contract details for instant form population
-AI Context Understanding: Recognizes contract terminology and business logic
-Tag-Based Selection: Voice-activated toggles for contract types and options
-Floating AI Assistant: Context-aware help and form guidance
-🎙️ Voice Technology Stack
-Primary Engine: ElevenLabs ScribeV2 Realtime (WebSocket streaming)
-Fallback System: ElevenLabs ScribeV2 API (file-based)
-Connection Resilience: Automatic reconnection with exponential backoff
-Audio Quality: 16kHz PCM, 16-bit, mono channel
-Platform Support: Native audio recording on mobile, WebRTC on web
-🤖 AI Integration
-Text Generation: OpenRouter API with Claude-3-Haiku
-Form Parsing: Custom AI prompts for structured data extraction
-Context Awareness: Field-specific AI processing
-Error Handling: Graceful fallbacks and user feedback
-🏗️ Architecture
-Voice Transcription Flow
+- **Complex Form Fields**: Client details, pricing, employee changes, subcontractor info
+- **Voice Transcription**: Speak contract details for instant form population
+- **AI Context Understanding**: Recognizes contract terminology and business logic
+- **Tag-Based Selection**: Voice-activated toggles for contract types and options
+- **Floating AI Assistant**: Context-aware help and form guidance
 
-WebSocket Connection Architecture
+### 🎙️ Voice Technology Stack
 
-Component Interaction Diagram
+- **Primary Engine**: ElevenLabs ScribeV2 Realtime (WebSocket streaming)
+- **Fallback System**: ElevenLabs ScribeV2 API (file-based)
+- **Connection Resilience**: Automatic reconnection with exponential backoff
+- **Audio Quality**: 16kHz PCM, 16-bit, mono channel
+- **Platform Support**: Native audio recording on mobile, WebRTC on web
 
-Frontend Architecture
+### 🤖 AI Integration
+
+- **Text Generation**: OpenRouter API with Claude-3-Haiku
+- **Form Parsing**: Custom AI prompts for structured data extraction
+- **Context Awareness**: Field-specific AI processing
+- **Error Handling**: Graceful fallbacks and user feedback
+
+## 🏗️ Architecture
+
+### Voice Transcription Flow
+
+```mermaid
+graph TD
+    A[User Speaks] --> B[VoiceRecorder Component]
+    B --> C[Audio Recording]
+    C --> D[WebSocket Connection]
+    D --> E{ElevenLabs ScribeV2}
+    E -->|Success| F[Real-time Transcription]
+    E -->|Failure| G[Fallback to File API]
+    F --> H[Live Text Display]
+    G --> I[File Upload & Transcription]
+    I --> H
+    H --> J[AI Processing]
+    J --> K[Form Field Population]
+
+    style E fill:#10B981
+    style F fill:#3B82F6
+    style G fill:#F59E0B
+```
+
+### WebSocket Connection Architecture
+
+```mermaid
+sequenceDiagram
+    participant App as Mobile App
+    participant WS as WebSocket Client
+    participant EL as ElevenLabs API
+    participant AI as AI Processor
+
+    App->>WS: Start Recording
+    WS->>EL: Connect (wss://api.elevenlabs.io)
+    EL-->>WS: Connection Ready
+    WS->>EL: Send Audio Stream
+    loop Real-time Processing
+        EL-->>WS: Partial Transcript
+        WS-->>App: Update UI
+    end
+    App->>WS: Stop Recording
+    WS->>EL: Commit Final Audio
+    EL-->>WS: Final Transcript
+    WS->>AI: Process Text
+    AI-->>App: Structured Data
+```
+
+### Component Interaction Diagram
+
+```mermaid
+graph LR
+    A[VoiceRecorder] --> B[VoiceEdit]
+    A --> C[FloatingAINavbar]
+    B --> D[InputField]
+    C --> E[AI Chat Interface]
+    D --> F[Form Screens]
+    F --> G[tRPC Backend]
+    G --> H[OpenRouter API]
+    G --> I[ElevenLabs API]
+
+    style A fill:#8B5CF6
+    style B fill:#8B5CF6
+    style C fill:#8B5CF6
+    style G fill:#10B981
+```
+
+### Frontend Architecture
+
+```
 📱 React Native + Expo Router
 ├── 🎨 UI Components (VoiceRecorder, VoiceEdit, InputField)
 ├── 📝 Screens (VoiceFill, ContractAnalysis, Dashboard)
 ├── 🔄 State Management (Zustand + React Query)
 ├── 🗣️ Voice Processing (ElevenLabs + WebSocket)
 └── 🤖 AI Integration (OpenRouter API)
-Backend Architecture
+```
+
+### Backend Architecture
+
+```
 🚀 Hono + tRPC Server
 ├── 🔐 API Proxy (OpenRouter secure proxy)
 ├── 📡 tRPC Routes (Type-safe API endpoints)
 ├── 🎯 CORS Configuration
 └── 📊 Error Monitoring (Sentry)
-Key Components
-VoiceRecorder Component
-Real-time WebSocket transcription
-Fallback to file-based API
-Connection state management
-Audio visualization with animations
-VoiceEdit Component
-2-second hold gesture detection
-Context-aware AI editing
-Smart command recognition ("clear", "change X to Y", "append")
-ContractParser Utility
-AI-powered contract text analysis
-Structured data extraction
-Business logic validation
-🔧 Configuration
-Environment Variables
-Create a .env file with the following variables:
+```
 
+### Key Components
+
+#### VoiceRecorder Component
+- Real-time WebSocket transcription
+- Fallback to file-based API
+- Connection state management
+- Audio visualization with animations
+
+#### VoiceEdit Component
+- 2-second hold gesture detection
+- Context-aware AI editing
+- Smart command recognition ("clear", "change X to Y", "append")
+
+#### ContractParser Utility
+- AI-powered contract text analysis
+- Structured data extraction
+- Business logic validation
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create a `.env` file with the following variables:
+
+```bash
 # Backend API URL (Railway deployment)
 EXPO_PUBLIC_API_BASE_URL=https://your-railway-app.up.railway.app
 
@@ -134,7 +239,11 @@ EXPO_PUBLIC_SENTRY_DSN=your_sentry_dsn
 # Optional: OpenRouter referrer tracking
 OPENROUTER_HTTP_REFERER=https://your-domain.com
 OPENROUTER_X_TITLE=Ask ARA
-Railway Deployment
+```
+
+### Railway Deployment
+
+```bash
 # Login to Railway
 railway login
 
@@ -149,8 +258,13 @@ railway up
 
 # Get your deployment URL
 railway domain
-🧪 Testing Strategy
-Test Coverage: 60%+ Required
+```
+
+## 🧪 Testing Strategy
+
+### Test Coverage: 60%+ Required
+
+```bash
 # Component Tests
 components/__tests__/VoiceRecorder.test.tsx
 components/__tests__/VoiceEdit.test.tsx
@@ -164,13 +278,20 @@ utils/__tests__/contractParser.test.ts
 
 # API Tests
 lib/__tests__/trpc.test.ts
-Testing Features
-Voice Recording Simulation: Mocked audio recording and transcription
-AI API Mocking: Simulated OpenRouter responses
-WebSocket Testing: Connection state and message handling
-Integration Tests: End-to-end voice-to-form workflows
-🚀 Deployment
-Mobile App Deployment
+```
+
+### Testing Features
+
+- **Voice Recording Simulation**: Mocked audio recording and transcription
+- **AI API Mocking**: Simulated OpenRouter responses
+- **WebSocket Testing**: Connection state and message handling
+- **Integration Tests**: End-to-end voice-to-form workflows
+
+## 🚀 Deployment
+
+### Mobile App Deployment
+
+```bash
 # Install EAS CLI
 bun install -g @expo/eas-cli
 
@@ -184,7 +305,11 @@ eas build --platform android
 # Submit to stores
 eas submit --platform ios
 eas submit --platform android
-Web Deployment
+```
+
+### Web Deployment
+
+```bash
 # Build for web
 eas build --platform web
 
@@ -192,39 +317,53 @@ eas build --platform web
 # - Vercel: Automatic from GitHub
 # - Netlify: Connect repository
 # - EAS Hosting: eas hosting:deploy
-🔒 Security & Privacy
-API Key Protection: All AI API calls routed through secure backend proxy
-No Client-Side Keys: Sensitive credentials never exposed to mobile clients
-CORS Protection: Configured for app domain only
-Error Sanitization: Sensitive data filtered from error reports
-Sentry Integration: Production error monitoring and tracking
-🎨 Design System
-Color Palette
-Primary: Emerald (#10B981) for AI features
-Background: Dark theme (#1A1A1A, #0B0B0B)
-Text: Light grays (#E5E7EB, #9CA3AF)
-Accent: Subtle borders and highlights
-Typography
-System Fonts: Platform-native for optimal performance
-Sizes: 12px-16px for readability
-Weights: 400-700 for hierarchy
-Voice UI Patterns
-Recording States: Visual feedback with pulsing animations
-Connection Status: Clear indicators for WebSocket state
-Transcription Display: Real-time text updates with AI badges
-📊 Performance
-Benchmarks
-Bun Runtime: 5.6x faster than npm for installations
-Voice Latency: <500ms for real-time transcription
-AI Processing: <2 seconds for form field extraction
-App Size: Optimized bundles for mobile deployment
-Optimizations
-WebSocket Streaming: Reduces latency vs file uploads
-Connection Pooling: Efficient API call management
-Lazy Loading: Components loaded on demand
-Image Optimization: Compressed assets and icons
-🛠️ Development
-Code Quality
+```
+
+## 🔒 Security & Privacy
+
+- **API Key Protection**: All AI API calls routed through secure backend proxy
+- **No Client-Side Keys**: Sensitive credentials never exposed to mobile clients
+- **CORS Protection**: Configured for app domain only
+- **Error Sanitization**: Sensitive data filtered from error reports
+- **Sentry Integration**: Production error monitoring and tracking
+
+## 🎨 Design System
+
+### Color Palette
+- **Primary**: Emerald (#10B981) for AI features
+- **Background**: Dark theme (#1A1A1A, #0B0B0B)
+- **Text**: Light grays (#E5E7EB, #9CA3AF)
+- **Accent**: Subtle borders and highlights
+
+### Typography
+- **System Fonts**: Platform-native for optimal performance
+- **Sizes**: 12px-16px for readability
+- **Weights**: 400-700 for hierarchy
+
+### Voice UI Patterns
+- **Recording States**: Visual feedback with pulsing animations
+- **Connection Status**: Clear indicators for WebSocket state
+- **Transcription Display**: Real-time text updates with AI badges
+
+## 📊 Performance
+
+### Benchmarks
+- **Bun Runtime**: 5.6x faster than npm for installations
+- **Voice Latency**: <500ms for real-time transcription
+- **AI Processing**: <2 seconds for form field extraction
+- **App Size**: Optimized bundles for mobile deployment
+
+### Optimizations
+- **WebSocket Streaming**: Reduces latency vs file uploads
+- **Connection Pooling**: Efficient API call management
+- **Lazy Loading**: Components loaded on demand
+- **Image Optimization**: Compressed assets and icons
+
+## 🛠️ Development
+
+### Code Quality
+
+```bash
 # Linting
 bun run lint
 
@@ -233,7 +372,11 @@ npx tsc --noEmit
 
 # Testing
 bun run test:coverage
-Project Structure
+```
+
+### Project Structure
+
+```
 ara-voice-form/
 ├── app/                          # Expo Router screens
 │   ├── (tabs)/                   # Tab navigation
@@ -258,32 +401,49 @@ ara-voice-form/
 ├── constants/                   # App constants
 ├── types/                       # TypeScript definitions
 └── coverage/                    # Test coverage reports
-🤝 Contributing
-Fork the repository
-Create a feature branch: git checkout -b feature/amazing-feature
-Commit changes: git commit -m 'Add amazing feature'
-Push to branch: git push origin feature/amazing-feature
-Open a Pull Request
-Development Guidelines
-TypeScript Strict: All code must pass strict type checking
-Test Coverage: Maintain 60%+ coverage for new features
-Code Style: Follow ESLint configuration
-Voice UX: Test all voice features on actual devices
-Performance: Profile and optimize before merging
-📄 License
+```
+
+## 🤝 Contributing
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Commit** changes: `git commit -m 'Add amazing feature'`
+4. **Push** to branch: `git push origin feature/amazing-feature`
+5. **Open** a Pull Request
+
+### Development Guidelines
+
+- **TypeScript Strict**: All code must pass strict type checking
+- **Test Coverage**: Maintain 60%+ coverage for new features
+- **Code Style**: Follow ESLint configuration
+- **Voice UX**: Test all voice features on actual devices
+- **Performance**: Profile and optimize before merging
+
+## 📄 License
+
 This project is proprietary software. All rights reserved.
 
-🙏 Acknowledgments
-ElevenLabs for ScribeV2 speech-to-text technology
-OpenRouter for AI model access
-Expo for the amazing React Native platform
-Railway for reliable deployment infrastructure
-Rork for the initial development framework
-📞 Support
-Documentation: docs/ folder
-Issues: GitHub Issues for bug reports
-Discussions: GitHub Discussions for questions
-Email: support@ask-ara.com
-Built with ❤️ using React Native, Expo, and cutting-edge AI technology
+## 🙏 Acknowledgments
 
-Transforming voice into action, one form at a time.
+- **ElevenLabs** for ScribeV2 speech-to-text technology
+- **OpenRouter** for AI model access
+- **Expo** for the amazing React Native platform
+- **Railway** for reliable deployment infrastructure
+- **Rork** for the initial development framework
+
+## 📞 Support
+
+- **Documentation**: [docs/](docs/) folder
+- **Issues**: GitHub Issues for bug reports
+- **Discussions**: GitHub Discussions for questions
+- **Email**: support@ask-ara.com
+
+---
+
+<div align="center">
+
+**Built with ❤️ using React Native, Expo, and cutting-edge AI technology**
+
+*Transforming voice into action, one form at a time.*
+
+</div>
