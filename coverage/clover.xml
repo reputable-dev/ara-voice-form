@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1763797380982" clover="3.2.0">
-  <project timestamp="1763797380982" name="All files">
-    <metrics statements="1435" coveredstatements="481" conditionals="869" coveredconditionals="279" methods="288" coveredmethods="116" elements="2592" coveredelements="876" complexity="0" loc="1435" ncloc="1435" packages="9" files="24" classes="24"/>
+<coverage generated="1763800365962" clover="3.2.0">
+  <project timestamp="1763800365962" name="All files">
+    <metrics statements="1378" coveredstatements="478" conditionals="834" coveredconditionals="278" methods="280" coveredmethods="116" elements="2492" coveredelements="872" complexity="0" loc="1378" ncloc="1378" packages="5" files="19" classes="19"/>
     <package name="app">
       <metrics statements="16" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="8" coveredmethods="0"/>
       <file name="+not-found.tsx" path="/Users/alias/ara-voice-form/app/+not-found.tsx">
@@ -31,7 +31,7 @@
       </file>
     </package>
     <package name="app.(tabs)">
-      <metrics statements="169" coveredstatements="136" conditionals="58" coveredconditionals="44" methods="93" coveredmethods="63"/>
+      <metrics statements="169" coveredstatements="136" conditionals="58" coveredconditionals="45" methods="93" coveredmethods="63"/>
       <file name="_layout.tsx" path="/Users/alias/ara-voice-form/app/(tabs)/_layout.tsx">
         <metrics statements="2" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="0"/>
         <line num="7" count="0" type="stmt"/>
@@ -162,13 +162,13 @@
         <line num="268" count="1" type="stmt"/>
       </file>
       <file name="index.tsx" path="/Users/alias/ara-voice-form/app/(tabs)/index.tsx">
-        <metrics statements="49" coveredstatements="44" conditionals="32" coveredconditionals="28" methods="18" coveredmethods="14"/>
-        <line num="21" count="69" type="stmt"/>
-        <line num="22" count="69" type="stmt"/>
-        <line num="23" count="69" type="stmt"/>
-        <line num="24" count="69" type="stmt"/>
-        <line num="32" count="69" type="stmt"/>
-        <line num="34" count="69" type="stmt"/>
+        <metrics statements="49" coveredstatements="44" conditionals="32" coveredconditionals="29" methods="18" coveredmethods="14"/>
+        <line num="21" count="70" type="stmt"/>
+        <line num="22" count="70" type="stmt"/>
+        <line num="23" count="70" type="stmt"/>
+        <line num="24" count="70" type="stmt"/>
+        <line num="32" count="70" type="stmt"/>
+        <line num="34" count="70" type="stmt"/>
         <line num="35" count="10" type="stmt"/>
         <line num="36" count="10" type="stmt"/>
         <line num="37" count="10" type="stmt"/>
@@ -178,27 +178,27 @@
         <line num="43" count="10" type="stmt"/>
         <line num="45" count="10" type="stmt"/>
         <line num="47" count="10" type="stmt"/>
-        <line num="63" count="8" type="cond" truecount="2" falsecount="0"/>
+        <line num="63" count="9" type="cond" truecount="2" falsecount="0"/>
         <line num="64" count="1" type="stmt"/>
-        <line num="67" count="3" type="stmt"/>
-        <line num="69" count="3" type="cond" truecount="3" falsecount="1"/>
-        <line num="70" count="3" type="stmt"/>
-        <line num="71" count="3" type="stmt"/>
-        <line num="73" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="74" count="2" type="stmt"/>
-        <line num="75" count="2" type="stmt"/>
+        <line num="67" count="4" type="stmt"/>
+        <line num="69" count="4" type="cond" truecount="3" falsecount="1"/>
+        <line num="70" count="4" type="stmt"/>
+        <line num="71" count="4" type="stmt"/>
+        <line num="73" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="74" count="3" type="stmt"/>
+        <line num="75" count="3" type="stmt"/>
         <line num="84" count="1" type="stmt"/>
         <line num="87" count="0" type="stmt"/>
         <line num="90" count="6" type="stmt"/>
         <line num="91" count="6" type="stmt"/>
-        <line num="93" count="9" type="stmt"/>
-        <line num="97" count="69" type="stmt"/>
+        <line num="93" count="10" type="stmt"/>
+        <line num="97" count="70" type="stmt"/>
         <line num="98" count="3" type="stmt"/>
         <line num="106" count="3" type="stmt"/>
-        <line num="109" count="69" type="stmt"/>
+        <line num="109" count="70" type="stmt"/>
         <line num="110" count="32" type="stmt"/>
         <line num="111" count="0" type="stmt"/>
-        <line num="120" count="69" type="stmt"/>
+        <line num="120" count="70" type="stmt"/>
         <line num="155" count="4" type="stmt"/>
         <line num="167" count="3" type="stmt"/>
         <line num="181" count="1" type="stmt"/>
@@ -214,92 +214,11 @@
         <line num="306" count="2" type="stmt"/>
       </file>
     </package>
-    <package name="backend">
-      <metrics statements="5" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-      <file name="hono.ts" path="/Users/alias/ara-voice-form/backend/hono.ts">
-        <metrics statements="5" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-        <line num="7" count="0" type="stmt"/>
-        <line num="9" count="0" type="stmt"/>
-        <line num="11" count="0" type="stmt"/>
-        <line num="20" count="0" type="stmt"/>
-        <line num="21" count="0" type="stmt"/>
-      </file>
-    </package>
-    <package name="backend.api">
-      <metrics statements="26" coveredstatements="0" conditionals="25" coveredconditionals="0" methods="2" coveredmethods="0"/>
-      <file name="gemini-proxy.ts" path="/Users/alias/ara-voice-form/backend/api/gemini-proxy.ts">
-        <metrics statements="26" coveredstatements="0" conditionals="25" coveredconditionals="0" methods="2" coveredmethods="0"/>
-        <line num="27" count="0" type="stmt"/>
-        <line num="29" count="0" type="stmt"/>
-        <line num="31" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="32" count="0" type="stmt"/>
-        <line num="39" count="0" type="stmt"/>
-        <line num="41" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="42" count="0" type="stmt"/>
-        <line num="43" count="0" type="stmt"/>
-        <line num="50" count="0" type="stmt"/>
-        <line num="52" count="0" type="stmt"/>
-        <line num="66" count="0" type="stmt"/>
-        <line num="77" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="78" count="0" type="stmt"/>
-        <line num="79" count="0" type="stmt"/>
-        <line num="82" count="0" type="stmt"/>
-        <line num="88" count="0" type="stmt"/>
-        <line num="91" count="0" type="cond" truecount="0" falsecount="5"/>
-        <line num="92" count="0" type="stmt"/>
-        <line num="93" count="0" type="stmt"/>
-        <line num="100" count="0" type="stmt"/>
-        <line num="102" count="0" type="stmt"/>
-        <line num="109" count="0" type="stmt"/>
-        <line num="111" count="0" type="stmt"/>
-        <line num="120" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="121" count="0" type="stmt"/>
-        <line num="124" count="0" type="stmt"/>
-      </file>
-    </package>
-    <package name="backend.trpc">
-      <metrics statements="22" coveredstatements="0" conditionals="8" coveredconditionals="0" methods="4" coveredmethods="0"/>
-      <file name="app-router.ts" path="/Users/alias/ara-voice-form/backend/trpc/app-router.ts">
-        <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-        <line num="4" count="0" type="stmt"/>
-      </file>
-      <file name="create-context.ts" path="/Users/alias/ara-voice-form/backend/trpc/create-context.ts">
-        <metrics statements="21" coveredstatements="0" conditionals="8" coveredconditionals="0" methods="4" coveredmethods="0"/>
-        <line num="13" count="0" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="19" count="0" type="stmt"/>
-        <line num="21" count="0" type="stmt"/>
-        <line num="29" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="39" count="0" type="stmt"/>
-        <line num="44" count="0" type="stmt"/>
-        <line num="49" count="0" type="stmt"/>
-        <line num="50" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="51" count="0" type="stmt"/>
-        <line num="56" count="0" type="stmt"/>
-        <line num="65" count="0" type="stmt"/>
-        <line num="66" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="67" count="0" type="stmt"/>
-        <line num="69" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="70" count="0" type="stmt"/>
-        <line num="75" count="0" type="stmt"/>
-        <line num="83" count="0" type="stmt"/>
-        <line num="86" count="0" type="stmt"/>
-        <line num="89" count="0" type="stmt"/>
-        <line num="92" count="0" type="stmt"/>
-      </file>
-    </package>
-    <package name="backend.trpc.routes.example.hi">
-      <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-      <file name="route.ts" path="/Users/alias/ara-voice-form/backend/trpc/routes/example/hi/route.ts">
-        <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-        <line num="7" count="0" type="stmt"/>
-      </file>
-    </package>
     <package name="components">
       <metrics statements="1050" coveredstatements="239" conditionals="577" coveredconditionals="136" methods="163" coveredmethods="46"/>
       <file name="Card.tsx" path="/Users/alias/ara-voice-form/components/Card.tsx">
         <metrics statements="2" coveredstatements="2" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
-        <line num="5" count="374" type="stmt"/>
+        <line num="5" count="377" type="stmt"/>
         <line num="14" count="5" type="stmt"/>
       </file>
       <file name="ErrorBoundary.tsx" path="/Users/alias/ara-voice-form/components/ErrorBoundary.tsx">
@@ -312,9 +231,9 @@
         <line num="29" count="10" type="stmt"/>
         <line num="36" count="94" type="stmt"/>
         <line num="37" count="1" type="stmt"/>
-        <line num="41" count="189" type="cond" truecount="2" falsecount="0"/>
+        <line num="41" count="190" type="cond" truecount="2" falsecount="0"/>
         <line num="42" count="18" type="stmt"/>
-        <line num="52" count="171" type="stmt"/>
+        <line num="52" count="172" type="stmt"/>
         <line num="56" count="5" type="stmt"/>
       </file>
       <file name="FloatingAIAssistant.tsx" path="/Users/alias/ara-voice-form/components/FloatingAIAssistant.tsx">
@@ -1376,7 +1295,7 @@
       </file>
     </package>
     <package name="lib">
-      <metrics statements="45" coveredstatements="16" conditionals="30" coveredconditionals="3" methods="12" coveredmethods="3"/>
+      <metrics statements="42" coveredstatements="13" conditionals="28" coveredconditionals="1" methods="12" coveredmethods="3"/>
       <file name="sentry.ts" path="/Users/alias/ara-voice-form/lib/sentry.ts">
         <metrics statements="39" coveredstatements="10" conditionals="28" coveredconditionals="1" methods="11" coveredmethods="2"/>
         <line num="12" count="5" type="stmt"/>
@@ -1420,13 +1339,10 @@
         <line num="166" count="0" type="stmt"/>
       </file>
       <file name="trpc.ts" path="/Users/alias/ara-voice-form/lib/trpc.ts">
-        <metrics statements="6" coveredstatements="6" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
+        <metrics statements="3" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="4" count="3" type="stmt"/>
         <line num="6" count="3" type="stmt"/>
-        <line num="8" count="3" type="stmt"/>
-        <line num="9" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="10" count="2" type="stmt"/>
-        <line num="13" count="1" type="stmt"/>
-        <line num="18" count="3" type="stmt"/>
+        <line num="7" count="1" type="stmt"/>
       </file>
     </package>
     <package name="utils">

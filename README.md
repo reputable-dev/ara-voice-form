@@ -129,7 +129,7 @@ graph TD
     I --> H
     H --> J[AI Processing]
     J --> K[Form Field Population]
-    
+
     style E fill:#10B981
     style F fill:#3B82F6
     style G fill:#F59E0B
@@ -143,7 +143,7 @@ sequenceDiagram
     participant WS as WebSocket Client
     participant EL as ElevenLabs API
     participant AI as AI Processor
-    
+
     App->>WS: Start Recording
     WS->>EL: Connect (wss://api.elevenlabs.io)
     EL-->>WS: Connection Ready
@@ -171,7 +171,7 @@ graph LR
     F --> G[tRPC Backend]
     G --> H[OpenRouter API]
     G --> I[ElevenLabs API]
-    
+
     style A fill:#8B5CF6
     style B fill:#8B5CF6
     style C fill:#8B5CF6

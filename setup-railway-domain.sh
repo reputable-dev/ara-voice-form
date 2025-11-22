@@ -1,0 +1,51 @@
+#!/bin/bash
+
+echo "🌐 Setting Up Railway Domain for ARA Voice Form Backend"
+echo "======================================================"
+echo ""
+
+echo "📋 STEP 1: Link Project First"
+echo "============================="
+echo "Before setting up a domain, you need to link the project:"
+echo "railway link"
+echo ""
+echo "Select workspace: danmarauda's Projects"
+echo "Find project ID: 3d352986-ad31-4eee-a7f3-aabe20f99fc8"
+echo ""
+
+echo "🌐 STEP 2: Generate Railway Domain"
+echo "=================================="
+echo "After linking, run:"
+echo "railway domain"
+echo ""
+echo "This will generate a URL like:"
+echo "https://ara-voice-form-backend.up.railway.app"
+echo ""
+
+echo "🎛️  STEP 3: Alternative - Custom Domain"
+echo "======================================"
+echo "For a custom domain (optional):"
+echo "railway domain your-custom-domain.com"
+echo ""
+
+echo "📊 STEP 4: List Current Domains"
+echo "=============================="
+echo "To see all configured domains:"
+echo "railway domain --list"
+echo ""
+
+echo "⚙️  Configuration Options:"
+echo "========================"
+echo "- Service-specific domain: railway domain --service backend"
+echo "- Custom port: railway domain --port 3000"
+echo "- JSON output: railway domain --json"
+echo ""
+
+echo "🔄 After Domain Setup:"
+echo "===================="
+echo "1. Deploy: railway up"
+echo "2. Update .env: EXPO_PUBLIC_RORK_API_BASE_URL=https://your-domain.railway.app"
+echo "3. Restart: bun run start"
+echo ""
+
+echo "✅ Ready to set up your backend URL!"

@@ -1,25 +1,13 @@
-import { createTRPCReact } from "@trpc/react-query";
-import { httpLink } from "@trpc/client";
-import type { AppRouter } from "@/backend/trpc/app-router";
-import superjson from "superjson";
+import React from 'react';
+import { ConvexProvider, ConvexReactClient } from "convex/react";
 
-export const trpc = createTRPCReact<AppRouter>();
+const convexUrl = process.env.EXPO_PUBLIC_CONVEX_URL;
+if (!convexUrl) {
+  throw new Error("EXPO_PUBLIC_CONVEX_URL is not set");
+}
 
-const getBaseUrl = () => {
-  if (process.env.EXPO_PUBLIC_API_BASE_URL) {
-    return process.env.EXPO_PUBLIC_API_BASE_URL;
-  }
+export const convex = new ConvexReactClient(convexUrl);
 
-  throw new Error(
-    "No base url found, please set EXPO_PUBLIC_API_BASE_URL"
-  );
+export const ConvexClientProvider = ({ children }: { children: React.ReactNode }) => {
+  return React.createElement(ConvexProvider, { client: convex }, children);
 };
-
-export const trpcClient = trpc.createClient({
-  links: [
-    httpLink({
-      url: `${getBaseUrl()}/api/trpc`,
-      transformer: superjson,
-    }),
-  ],
-});

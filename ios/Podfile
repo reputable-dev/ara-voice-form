@@ -56,5 +56,15 @@ target 'AskARAKnowledgeAssistant' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+    
+    # Fix for folly coroutine issue in React Native 0.81.5
+    installer.pods_project.targets.each do |target|
+      if target.name.start_with?('ReactNativeDependencies') || target.name.start_with?('RCT-Folly')
+        target.build_configurations.each do |config|
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_HAS_COROUTINES=0'
+        end
+      end
+    end
   end
 end
