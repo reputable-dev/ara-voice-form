@@ -1,9 +1,5 @@
 # Ask ARA — Knowledge Assistant
 
-<div align="center">
-
-![Ask ARA Logo](assets/images/icon.png)
-
 **AI-Powered Voice Interaction for Form Filling & Contract Analysis**
 
 [![React Native](https://img.shields.io/badge/React%20Native-0.81.5-blue.svg)](https://reactnative.dev/)
@@ -12,8 +8,6 @@
 [![Railway](https://img.shields.io/badge/Deployed%20on-Railway-0B0D17.svg)](https://railway.app/)
 
 [📱 Download for iOS](https://apps.apple.com/app/ask-ara) • [📱 Download for Android](https://play.google.com/store/apps/ask-ara) • [🌐 Try Web Version](https://ask-ara.vercel.app)
-
-</div>
 
 ## ✨ Overview
 
