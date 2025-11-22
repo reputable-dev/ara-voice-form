@@ -120,6 +120,70 @@ Professional contract adjustment forms with voice assistance:
 
 ## 🏗️ Architecture
 
+### Voice Transcription Flow
+
+```mermaid
+graph TD
+    A[User Speaks] --> B[VoiceRecorder Component]
+    B --> C[Audio Recording]
+    C --> D[WebSocket Connection]
+    D --> E{ElevenLabs ScribeV2}
+    E -->|Success| F[Real-time Transcription]
+    E -->|Failure| G[Fallback to File API]
+    F --> H[Live Text Display]
+    G --> I[File Upload & Transcription]
+    I --> H
+    H --> J[AI Processing]
+    J --> K[Form Field Population]
+    
+    style E fill:#10B981
+    style F fill:#3B82F6
+    style G fill:#F59E0B
+```
+
+### WebSocket Connection Architecture
+
+```mermaid
+sequenceDiagram
+    participant App as Mobile App
+    participant WS as WebSocket Client
+    participant EL as ElevenLabs API
+    participant AI as AI Processor
+    
+    App->>WS: Start Recording
+    WS->>EL: Connect (wss://api.elevenlabs.io)
+    EL-->>WS: Connection Ready
+    WS->>EL: Send Audio Stream
+    loop Real-time Processing
+        EL-->>WS: Partial Transcript
+        WS-->>App: Update UI
+    end
+    App->>WS: Stop Recording
+    WS->>EL: Commit Final Audio
+    EL-->>WS: Final Transcript
+    WS->>AI: Process Text
+    AI-->>App: Structured Data
+```
+
+### Component Interaction Diagram
+
+```mermaid
+graph LR
+    A[VoiceRecorder] --> B[VoiceEdit]
+    A --> C[FloatingAINavbar]
+    B --> D[InputField]
+    C --> E[AI Chat Interface]
+    D --> F[Form Screens]
+    F --> G[tRPC Backend]
+    G --> H[OpenRouter API]
+    G --> I[ElevenLabs API]
+    
+    style A fill:#8B5CF6
+    style B fill:#8B5CF6
+    style C fill:#8B5CF6
+    style G fill:#10B981
+```
+
 ### Frontend Architecture
 
 ```
