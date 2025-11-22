@@ -6,7 +6,7 @@ import { StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import FloatingAINavbar from "@/components/FloatingAINavbar";
-import { trpc, trpcClient } from "@/lib/trpc";
+import { ConvexClientProvider } from "@/lib/trpc";
 import { initSentry } from "@/lib/sentry";
 
 // Initialize Sentry error monitoring
@@ -37,7 +37,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+    <ConvexClientProvider>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <GestureHandlerRootView style={styles.gestureHandler}>
@@ -45,7 +45,7 @@ export default function RootLayout() {
           </GestureHandlerRootView>
         </SafeAreaProvider>
       </QueryClientProvider>
-    </trpc.Provider>
+    </ConvexClientProvider>
   );
 }
 

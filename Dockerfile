@@ -21,7 +21,7 @@ COPY . .
 # RUN bun run build
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3210
 
 # Start the application
-CMD ["bun", "run", "dev:backend"]
+CMD ["bun", "run", "convex:dev"]

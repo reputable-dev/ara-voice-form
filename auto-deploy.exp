@@ -1,0 +1,41 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+
+# Start railway link
+spawn railway link
+
+# Wait for the prompt and select the project
+expect "Select a project"
+send "\r"
+
+# Look for our project ID in the list and select it
+expect {
+    "3d352986-ad31-4eee-a7f3-aabe20f99fc8" {
+        send "\r"
+    }
+    timeout {
+        # If we can't find it, try the first option
+        send "\r"
+    }
+}
+
+# Wait for linking to complete
+expect "Linked successfully" eof
+
+puts "✅ Project linked successfully!"
+
+# Now deploy
+spawn railway up
+
+expect "Deploying" {
+    puts "🚀 Deployment started..."
+}
+
+expect eof
+
+puts "✅ Deployment complete!"
+
+# Get the domain
+spawn railway domain
+expect eof

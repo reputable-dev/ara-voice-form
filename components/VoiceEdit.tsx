@@ -1,4 +1,4 @@
-import { generateText } from "@rork-ai/toolkit-sdk";
+import { useMutation } from "convex/react";
 import React, { useState, useRef, useEffect, ReactNode } from 'react';
 import {
   View,
@@ -38,6 +38,7 @@ export default function VoiceEdit({
   fieldName = 'field',
   enabled = true,
 }: VoiceEditProps) {
+  const smartEdit = useMutation("api.api.smartEdit");
   const [isLongPress, setIsLongPress] = useState<boolean>(false);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -524,26 +525,15 @@ export default function VoiceEdit({
     }
   };
 
-  const processSmartEdit = async (currentValue: string, spokenText: string, field: string): Promise<string> => {
+const processSmartEdit = async (currentValue: string, spokenText: string, field: string): Promise<string> => {
     try {
-      const prompt = `
-You are a smart text editing assistant.
-Current text in field "${field}": "${currentValue}"
-User instruction/spoken text: "${spokenText}"
-
-Task: Update the text based on the user's instruction.
-Rules:
-1. If the user says "clear" or "delete", return an empty string.
-2. If the user provides new content, replace or append as appropriate based on context.
-3. If the user says "change X to Y", perform the replacement.
-4. Return ONLY the final text. No explanations.
-`;
-
-      const result = await generateText({
-        messages: [{ role: 'user', content: prompt }]
+      const result = await smartEdit({
+        currentValue,
+        instruction: spokenText,
+        fieldName: field,
       });
       
-      return result.trim();
+      return result.newValue;
     } catch (error) {
       console.error('Smart edit failed, falling back to basic logic', error);
       // Fallback logic
