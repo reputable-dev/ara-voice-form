@@ -1,4 +1,4 @@
-# Ask ARA — Voice-Powered Knowledge Assistant
+# Agent ARA — Voice-Powered Knowledge Assistant
 
 **AI-powered voice-to-text form filling for mobile and web**
 
@@ -25,9 +25,9 @@ Cross-platform React Native application with intelligent voice editing, smart fo
 
 ## Overview
 
-Ask ARA (ARA Voice Form) is a voice-first mobile application that transforms how users interact with forms and documents. Using advanced speech recognition and AI, it enables hands-free data entry, intelligent document parsing, and contextual form assistance across iOS, Android, and web platforms.
+Agent ARA (ARA Voice Form) is a voice-first mobile application that transforms how users interact with forms and documents. Using advanced speech recognition and AI, it enables hands-free data entry, intelligent document parsing, and contextual form assistance across iOS, Android, and web platforms.
 
-[ref: app.json:3-4 "name": "Ask ARA — Knowledge Assistant"]
+[ref: app.json:3-4 "name": "Agent ARA — Knowledge Assistant"]
 [ref: package.json:2 "name": "expo-app"]
 [ref: Recent commits showing voice editing features: 8cddea3, b6959b4, 080987b]
 
@@ -285,7 +285,7 @@ Edit `app.json` to customize:
 ```json
 {
   "expo": {
-    "name": "Ask ARA — Knowledge Assistant",
+    "name": "Agent ARA — Knowledge Assistant",
     "slug": "ask-ara-knowledge-assistant",
     "version": "1.0.0",
     "orientation": "portrait",

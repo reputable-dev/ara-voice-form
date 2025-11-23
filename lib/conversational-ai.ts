@@ -26,7 +26,7 @@ You provide clear, concise, and friendly responses. When users speak to you via 
 you understand context from the entire conversation and respond naturally.`;
 
     this.options = {
-      model: options.model || 'anthropic/claude-3.5-sonnet',
+      model: options.model || 'openai/gpt-5.1-nano',
       temperature: options.temperature ?? 0.7,
       maxTokens: options.maxTokens || 1000,
       onStream: options.onStream,

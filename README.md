@@ -37,7 +37,7 @@
 - **CPU Efficiency**: 40% reduction in resource usage (15-20% → 8-12%)
 
 #### 🤖 **Advanced AI Integration**
-- **Conversational Intelligence**: Claude-3 Haiku with Rork AI SDK streaming
+- **Conversational Intelligence**: GPT-5.1 Nano with Rork AI SDK streaming
 - **Document Understanding**: Semantic analysis with Gemini RAG for knowledge base queries
 - **Context Awareness**: Field-specific AI processing maintaining conversation context
 - **Multi-Modal Support**: Voice, text, and image/document scanning capabilities
@@ -148,7 +148,7 @@ const livenessScore = await performLivenessDetection(audioStream);
 ```typescript
 // OpenRouter AI integration (lines 131-207)
 const aiResponse = await openRouterClient.chat.completions.create({
-  model: "anthropic/claude-3-haiku",
+  model: "openai/gpt-5.1-nano",
   messages: [{ role: "user", content: userPrompt }]
 });
 
@@ -158,7 +158,7 @@ const structuredData = await extractFormFields(ragResults);
 ```
 
 **AI Capabilities**:
-- **Conversational Intelligence**: Claude-3 Haiku with context-aware processing
+- **Conversational Intelligence**: GPT-5.1 Nano with context-aware processing
 - **Document Analysis**: Gemini RAG for knowledge base querying
 - **Multi-Modal Support**: Voice, text, camera/document scanning
 - **Contract Understanding**: Specialized prompts for business document analysis
@@ -296,7 +296,7 @@ components/
 **Evidence-Based Processing Pipeline**:
 1. **🎤 Voice Activation**: Natural speech or microphone gesture (VoiceRecorder:116-199)
 2. **⚡ Real-Time Transcription**: WebSocket streams audio → live text (<500ms latency)
-3. **🤖 AI Context Processing**: Claude-3 Haiku + Rork SDK for intelligent extraction
+3. **🤖 AI Context Processing**: GPT-5.1 Nano + Rork SDK for intelligent extraction
 4. **📝 Form Population**: Auto-fill any form type with structured data extraction
 5. **🎙️ Voice Editing**: Long-press fields for AI-powered voice corrections  
 6. **🔐 Biometric Authentication**: Enterprise security for sensitive form interactions
@@ -408,7 +408,7 @@ describe('Voice Recording Performance', () => {
 ### 🏛️ **Enterprise Testing Features**
 
 - **Voice Recording Simulation**: Mocked WebSocket audio streaming
-- **AI API Mocking**: Simulated OpenRouter & Claude responses  
+- **AI API Mocking**: Simulated OpenRouter & GPT responses  
 - **Biometric Testing**: Hardware security integration validation
 - **Performance Profiling**: 60fps and memory optimization verification
 - **Security Auditing**: AES-256 encryption and anti-spoofing validation

@@ -153,7 +153,7 @@ export default function FloatingAIAssistant({ testID, contractData }: FloatingAI
       });
 
       const requestBody = {
-        model: 'anthropic/claude-3-haiku', // Fast and cost-effective model
+        model: 'openai/gpt-5.1-nano', // Fast and cost-effective model
         messages: openRouterMessages,
         temperature: 0.7,
         max_tokens: 1024,

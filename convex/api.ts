@@ -23,7 +23,7 @@ export const generateText = mutation({
           "X-Title": "ARA Voice Form",
         },
         body: JSON.stringify({
-          model: "anthropic/claude-3-haiku",
+          model: "openai/gpt-5.1-nano",
           messages: [
             {
               role: "system",
@@ -132,7 +132,7 @@ Respond with ONLY the new field value. Do not include explanations. If the user 
           "X-Title": "ARA Voice Form",
         },
         body: JSON.stringify({
-          model: "anthropic/claude-3-haiku",
+          model: "openai/gpt-5.1-nano",
           messages: [
             {
               role: "system",
