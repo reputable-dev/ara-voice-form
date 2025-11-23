@@ -1,0 +1,65 @@
+{
+    "repo": "ara-voice-form",
+    "branch": "main",
+    "packageManagers": ["bun"],
+    "node": "20.x",
+    "workspaces": [],
+    "rootScripts": {
+        "start": "expo start",
+        "start-web": "expo start --web",
+        "dev": "bun run convex:dev",
+        "convex:dev": "convex dev",
+        "build": "expo export --platform web",
+        "test": "jest",
+        "test:coverage": "jest --coverage",
+        "lint": "expo lint",
+        "android": "expo run:android",
+        "ios": "expo run:ios",
+        "convex:deploy": "convex deploy"
+    },
+    "envExamplePaths": [".env.example"],
+    "ciPipelines": ["./.github/workflows/*.yml"],
+    "cloudTargets": ["Convex", "Railway", "Expo EAS"],
+    "framework": "React Native + Expo SDK 54",
+    "backend": "Convex (migrated from tRPC/Hono)",
+    "ai": "OpenRouter + ElevenLabs",
+    "testing": "Jest + React Testing Library",
+    "files": [
+        {
+            "path": "app/_layout.tsx",
+            "sha": "main",
+            "size": 2048,
+            "description": "Root layout with Convex provider"
+        },
+        {
+            "path": "components/VoiceRecorder.tsx",
+            "sha": "main", 
+            "size": 16384,
+            "description": "Voice recording with ElevenLabs WebSocket streaming"
+        },
+        {
+            "path": "components/VoiceEdit.tsx",
+            "sha": "main",
+            "size": 12288,
+            "description": "2-second hold voice editing with Convex smartEdit"
+        },
+        {
+            "path": "convex/api.ts",
+            "sha": "main",
+            "size": 4096,
+            "description": "Convex API functions (generateText, transcribeAudio, smartEdit)"
+        },
+        {
+            "path": "lib/trpc.ts",
+            "sha": "main",
+            "size": 512,
+            "description": "Convex client provider (migrated from tRPC)"
+        },
+        {
+            "path": "package.json",
+            "sha": "main",
+            "size": 3072,
+            "description": "Dependencies and scripts (Convex, Expo, React Native)"
+        }
+    ]
+}

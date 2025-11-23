@@ -1,8 +1,0 @@
-{
-  "team": "",
-  "project": "",
-  "functions": "convex/",
-  "gen1": {
-    "schema": "convex/schema.ts"
-  }
-}
