@@ -317,7 +317,7 @@ function getBaseUrl() {
 
 | Key | Value | Purpose | Line Range |
 |-----|-------|---------|------------|
-| `expo.name` | "Ask ARA — Knowledge Assistant" | Display name | 3 |
+| `expo.name` | "Agent ARA — Knowledge Assistant" | Display name | 3 |
 | `expo.slug` | "ask-ara-knowledge-assistant" | URL-safe identifier | 4 |
 | `expo.version` | "1.0.0" | App version | 5 |
 | `expo.orientation` | "portrait" | Screen orientation | 6 |

@@ -1,5 +1,5 @@
 # Comprehensive Deployment Workflow Analysis
-## ARA Voice Form - Ask ARA Knowledge Assistant
+## ARA Voice Form - Agent ARA Knowledge Assistant
 
 **Generated:** November 22, 2025
 **Project:** Expo React Native Mobile App
@@ -1384,7 +1384,7 @@ open https://appstoreconnect.apple.com/
 
 # Create new app
 # - Platform: iOS
-# - Name: Ask ARA — Knowledge Assistant
+# - Name: Agent ARA — Knowledge Assistant
 # - Primary Language: English
 # - Bundle ID: app.rork.ask-ara-knowledge-assistant
 # - SKU: ask-ara-v1
@@ -1522,7 +1522,7 @@ Required for iOS 17+:
 open https://play.google.com/console/
 
 # Create new app
-# - App name: Ask ARA — Knowledge Assistant
+# - App name: Agent ARA — Knowledge Assistant
 # - Default language: English (United States)
 # - App or Game: App
 # - Free or Paid: Free
@@ -1982,7 +1982,7 @@ open https://appstoreconnect.apple.com/
 
 # Click "+" → New App
 # - Platform: iOS
-# - Name: Ask ARA — Knowledge Assistant
+# - Name: Agent ARA — Knowledge Assistant
 # - Primary Language: English (U.S.)
 # - Bundle ID: Select or create app.rork.ask-ara-knowledge-assistant
 # - SKU: ask-ara-v1
@@ -2004,7 +2004,7 @@ open https://play.google.com/console/signup
 
 # 2. Create app in Play Console
 # Click "Create app"
-# - App name: Ask ARA — Knowledge Assistant
+# - App name: Agent ARA — Knowledge Assistant
 # - Default language: English (United States)
 # - App or game: App
 # - Free or paid: Free
@@ -2107,7 +2107,7 @@ open https://appstoreconnect.apple.com/
 eas submit --platform ios --profile production --latest
 
 # 3. Monitor submission
-# App Store Connect → My Apps → Ask ARA
+# App Store Connect → My Apps → Agent ARA
 # Status will change to "Waiting for Review"
 
 # ANDROID SUBMISSION
@@ -2122,7 +2122,7 @@ open https://play.google.com/console/
 eas submit --platform android --profile production --latest
 
 # 3. Monitor submission
-# Play Console → Ask ARA → Production track
+# Play Console → Agent ARA → Production track
 ```
 
 #### Step 9: Monitoring Setup (15 min)

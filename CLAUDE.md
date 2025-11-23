@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Ask ARA — Knowledge Assistant** is a native cross-platform mobile app built with Rork, featuring AI-powered voice interaction for form filling and contract analysis.
+**Agent ARA — Knowledge Assistant** is a native cross-platform mobile app built with Rork, featuring AI-powered voice interaction for form filling and contract analysis.
 
 **Key Technologies:**
 - **Frontend:** React Native 0.81.5 + Expo SDK 54 + Expo Router (file-based routing)
